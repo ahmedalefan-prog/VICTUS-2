@@ -22,6 +22,7 @@ export interface CatalogItemData {
   priceVip: number | null;
   unit: string;
   stock: number | null;
+  bulkThreshold: number | null;
   isActive: boolean;
 }
 
@@ -135,6 +136,9 @@ function ItemForm({ item, isLab, isMarket, onClose }: { item: CatalogItemData | 
             </Field>
             <Field label="المخزون" hint="اختياري">
               <Input name="stock" type="number" min="0" step="any" defaultValue={item?.stock ?? ""} dir="ltr" />
+            </Field>
+            <Field label="حدّ كمية الجملة" hint="عند بلوغها يُتاح التفاوض (فارغ = بلا تفاوض)">
+              <Input name="bulkThreshold" type="number" min="1" step="1" defaultValue={item?.bulkThreshold ?? ""} dir="ltr" />
             </Field>
           </>
         )}

@@ -104,6 +104,7 @@ export default async function ConsolePage() {
           priceVip: it.priceVip === null ? null : Number(it.priceVip),
           unit: it.unit ?? "",
           stock: it.stock === null ? null : Number(it.stock),
+          bulkThreshold: it.bulkThreshold ?? null,
           isActive: it.isActive,
         }))}
       />

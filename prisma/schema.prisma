@@ -449,10 +449,11 @@ model CatalogItem {
   condition   CatalogCondition? // for device listings in the market
   priceNormal Decimal           @db.Decimal(14, 2)
   priceVip    Decimal?          @db.Decimal(14, 2)
-  unit        String?
-  stock       Decimal?          @db.Decimal(14, 2)
-  isActive    Boolean           @default(true)
-  sortOrder   Int               @default(0)
+  unit          String?
+  stock         Decimal?        @db.Decimal(14, 2)
+  bulkThreshold Int? // market: qty at/above which wholesale negotiation unlocks (null = no negotiation)
+  isActive      Boolean         @default(true)
+  sortOrder     Int             @default(0)
   orderItems  OrderItem[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt

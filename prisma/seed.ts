@@ -157,6 +157,32 @@ async function seedServices(adminId: string) {
         }
       }
     }
+
+    // Seed the market catalog: spare parts (with bulk thresholds) + devices (by condition).
+    if (s.type === "MARKET") {
+      const market: { name: string; priceNormal: number; category: string; stock: number; unit?: string; condition?: "NEW" | "USED" | "REFURBISHED"; bulkThreshold?: number }[] = [
+        { name: "حسّاس كرسي الأسنان", priceNormal: 45000, category: "حساسات", stock: 24, unit: "قطعة", bulkThreshold: 10 },
+        { name: "صمام هوائي", priceNormal: 15000, category: "قطع عامة", stock: 60, unit: "قطعة", bulkThreshold: 20 },
+        { name: "محرك توربين NSK", priceNormal: 120000, category: "محركات", stock: 8, unit: "قطعة" },
+        { name: "مضخة شفط", priceNormal: 90000, category: "مضخات", stock: 12, unit: "قطعة", bulkThreshold: 5 },
+        { name: "كرسي أسنان متكامل", priceNormal: 2500000, category: "أجهزة", stock: 3, unit: "جهاز", condition: "NEW" },
+        { name: "جهاز أشعة بانوراما", priceNormal: 1800000, category: "أجهزة", stock: 1, unit: "جهاز", condition: "USED" },
+        { name: "كومبروسر هواء", priceNormal: 600000, category: "أجهزة", stock: 2, unit: "جهاز", condition: "REFURBISHED" },
+      ];
+      for (let i = 0; i < market.length; i++) {
+        const it = market[i];
+        const exists = await prisma.catalogItem.findFirst({ where: { serviceId: svc.id, name: it.name } });
+        if (!exists) {
+          await prisma.catalogItem.create({
+            data: {
+              serviceId: svc.id, name: it.name, priceNormal: it.priceNormal, category: it.category,
+              stock: it.stock, unit: it.unit ?? "قطعة", condition: it.condition ?? null,
+              bulkThreshold: it.bulkThreshold ?? null, sortOrder: i,
+            },
+          });
+        }
+      }
+    }
   }
   console.log(`✓ Services: ${services.length} (+lab catalog)`);
 }

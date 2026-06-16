@@ -132,6 +132,17 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
     throw new Error("أدخل السعر المقترح للتفاوض");
   }
 
+  // Market wholesale gate: negotiation only when a line reaches its bulk threshold.
+  if (d.mode === "NEGOTIATE" && d.serviceType === "MARKET") {
+    const qualifies = d.lines.some((l) => {
+      const ci = byId.get(l.catalogItemId);
+      const teethLen = (l.teeth ?? []).length;
+      const qty = teethLen > 0 ? teethLen : l.quantity;
+      return ci?.bulkThreshold != null && qty >= ci.bulkThreshold;
+    });
+    if (!qualifies) throw new Error("التفاوض متاح فقط عند بلوغ حدّ كمية الجملة");
+  }
+
   const orderNumber = await nextOrderNumber();
   const name = actorName(session);
   const tier = uniformTier(itemData);
