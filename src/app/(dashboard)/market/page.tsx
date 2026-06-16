@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MarketCart } from "@/components/services/market-cart";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const metadata = { title: "السوق" };
 
@@ -36,6 +37,8 @@ export default async function MarketPage() {
           {canOrder && <Link href="/market/orders" className="text-sm font-medium text-primary hover:underline">طلباتي ←</Link>}
         </div>
       </PageHeader>
+
+      <AdSlot placement="MARKET" />
 
       <MarketCart
         canOrder={canOrder}

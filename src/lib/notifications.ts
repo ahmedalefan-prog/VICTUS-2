@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 // `dispatchNotification` so titles/bodies stay consistent and channel
 // preferences are respected. In-app is active; email/SMS are foundation channels.
 
-type NotifType = "SYSTEM" | "ACCOUNT" | "MAINTENANCE" | "ORDER" | "JOB" | "GENERAL";
+type NotifType = "SYSTEM" | "ACCOUNT" | "MAINTENANCE" | "ORDER" | "JOB" | "AD" | "GENERAL";
 
 interface EventDef {
   type: NotifType;
@@ -95,6 +95,17 @@ export const NOTIFICATION_EVENTS = {
     type: "JOB",
     title: "تحديث على طلب التوظيف",
     body: (d) => `طلبك لوظيفة ${d.job} أصبح: ${d.status}`,
+  },
+  // ─── advertising ───
+  "ad.approved": {
+    type: "AD",
+    title: "تم اعتماد حملتك",
+    body: (d) => `حملة «${d.title}» أصبحت نشطة`,
+  },
+  "ad.rejected": {
+    type: "AD",
+    title: "تم رفض حملتك",
+    body: (d) => `حملة «${d.title}» لم تُعتمد`,
   },
   // ─── service membership ───
   "service.assigned": {

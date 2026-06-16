@@ -50,6 +50,7 @@ enum NotificationType {
   ORDER
   MAINTENANCE
   JOB
+  AD
   SYSTEM
   GENERAL
 }
@@ -121,6 +122,59 @@ enum TransactionStatus {
   CANCELLED
 }
 
+// ─── jobs & recruitment ───
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERNSHIP
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  SCREENING
+  INTERVIEW
+  ACCEPTED
+  REJECTED
+}
+
+// ─── advertising ───
+enum CampaignStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  PAUSED
+  COMPLETED
+  REJECTED
+}
+
+enum AdType {
+  BANNER
+  SPONSORED_PRODUCT
+  SPONSORED_JOB
+  SPONSORED_SERVICE
+}
+
+enum AdPaymentStatus {
+  UNPAID
+  PENDING_REVIEW
+  PAID
+}
+
+enum AdLeadType {
+  IMPRESSION_GOAL
+  CALL
+  INQUIRY
+  SALE
+}
+
 // ─── maintenance service (internal, no public catalog) ───
 enum MaintenancePriority {
   LOW
@@ -174,6 +228,11 @@ model User {
   maintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequester")
   assignedMaintenance MaintenanceRequest[] @relation("MaintenanceEngineer")
   maintenanceVisits   MaintenanceVisit[]   @relation("MaintenanceVisitEngineer")
+
+  postedJobs       Job[]             @relation("JobPoster")
+  jobApplications  JobApplication[]  @relation("JobApplicant")
+  candidateProfile CandidateProfile?
+  advertiser       Advertiser?
 
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
@@ -265,6 +324,8 @@ model Governorate {
   users     User[]
   clinics   Clinic[]
   services  Service[]
+  jobs      Job[]
+  candidateProfiles CandidateProfile[]
 
   @@map("governorates")
 }
@@ -668,4 +729,180 @@ model MaintenancePart {
 
   @@index([requestId])
   @@map("maintenance_parts")
+}
+
+// ─────────────────────────── JOBS & RECRUITMENT ───────────────────────────
+// Public job board: browse open to everyone, post by anyone with jobs:CREATE,
+// apply open to all approved users. Applications run a simple recruiter pipeline.
+
+model Job {
+  id             String           @id @default(cuid())
+  jobNumber      String           @unique // JOB-#####
+  postedById     String
+  postedBy       User             @relation("JobPoster", fields: [postedById], references: [id])
+  title          String
+  description    String?
+  employmentType EmploymentType   @default(FULL_TIME)
+  governorateId  String?
+  governorate    Governorate?     @relation(fields: [governorateId], references: [id])
+  salaryFrom     Decimal?         @db.Decimal(14, 2) // IQD
+  salaryTo       Decimal?         @db.Decimal(14, 2) // IQD
+  skills         String? // comma-separated
+  requirements   String?
+  status         JobStatus        @default(OPEN)
+  applications   JobApplication[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status])
+  @@index([postedById])
+  @@map("jobs")
+}
+
+model JobApplication {
+  id          String            @id @default(cuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicantId String
+  applicant   User              @relation("JobApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  coverLetter String?
+  cvUrl       String?
+  status      ApplicationStatus @default(SUBMITTED)
+  note        String? // recruiter note
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([jobId, applicantId])
+  @@index([applicantId])
+  @@map("job_applications")
+}
+
+// Job-seeker profile (separate from the user account).
+model CandidateProfile {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline        String?
+  bio             String?
+  governorateId   String?
+  governorate     Governorate? @relation(fields: [governorateId], references: [id])
+  skills          String? // comma-separated
+  experienceYears Int          @default(0)
+  education       String?
+  cvUrl           String?
+  isOpenToWork    Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("candidate_profiles")
+}
+
+// ─────────────────────────── ADVERTISING ───────────────────────────
+// Ported from VICTUS-1: advertiser → campaign (review + payment) → professional
+// AdSlot display (max 4 per page) with impression/click tracking + lead funnel.
+
+model Advertiser {
+  id        String       @id @default(cuid())
+  userId    String       @unique
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  contact   String?
+  campaigns AdCampaign[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("advertisers")
+}
+
+model AdCampaign {
+  id             String          @id @default(cuid())
+  campaignNumber String          @unique // CMP-#####
+  advertiserId   String
+  advertiser     Advertiser      @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  placements     String[]        @default([]) // AD_PLACEMENT keys, or ["ALL"]
+  adType         AdType          @default(BANNER)
+  title          String
+  imageUrl       String? // back-compat: first image derived from mediaUrls
+  targetUrl      String?
+  // media
+  mediaType      String          @default("SINGLE_IMAGE") // SINGLE_IMAGE | CAROUSEL | VIDEO | MIXED
+  mediaUrls      String[]        @default([]) // image/video links (external: YouTube/Vimeo/MP4)
+  thumbnailUrl   String?
+  // CTA
+  ctaType        String? // DETAILS | VISIT | CALL | WHATSAPP | BOOK | BUY | APPLY
+  ctaUrl         String?
+  // display options
+  autoplayMuted  Boolean         @default(false)
+  pinned         Boolean         @default(false)
+  popup          Boolean         @default(false)
+  wideBanner     Boolean         @default(false)
+  // sponsored target (polymorphic): CatalogItem / Job / Service
+  targetEntityType   String?
+  targetEntityId     String?
+  budget         Decimal         @default(0) @db.Decimal(14, 2) // IQD
+  spent          Decimal         @default(0) @db.Decimal(14, 2) // IQD
+  // billing
+  amountDue      Decimal         @default(0) @db.Decimal(14, 2) // IQD (from pricing)
+  paymentStatus  AdPaymentStatus @default(UNPAID)
+  paymentRef     String?
+  startDate      DateTime
+  endDate        DateTime
+  targetGovernorates String? // comma-separated codes
+  status         CampaignStatus  @default(DRAFT)
+  impressions    AdImpression[]
+  clicks         AdClick[]
+  leads          AdLead[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status])
+  @@index([placements], type: Gin)
+  @@map("ad_campaigns")
+}
+
+model AdLead {
+  id         String     @id @default(cuid())
+  campaignId String
+  campaign   AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  type       AdLeadType @default(INQUIRY)
+  value      Decimal?   @db.Decimal(14, 2) // IQD
+  note       String?
+  createdAt  DateTime   @default(now())
+
+  @@index([campaignId])
+  @@map("ad_leads")
+}
+
+// Monetization pricing rules per ad type.
+model AdPricing {
+  id        String   @id @default(cuid())
+  adType    AdType   @unique
+  price     Decimal  @db.Decimal(14, 2) // IQD
+  unit      String   @default("WEEKLY") // WEEKLY | MONTHLY
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@map("ad_pricing")
+}
+
+model AdImpression {
+  id          String     @id @default(cuid())
+  campaignId  String
+  campaign    AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  governorate String?
+  createdAt   DateTime   @default(now())
+
+  @@index([campaignId])
+  @@map("ad_impressions")
+}
+
+model AdClick {
+  id          String     @id @default(cuid())
+  campaignId  String
+  campaign    AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  governorate String?
+  createdAt   DateTime   @default(now())
+
+  @@index([campaignId])
+  @@map("ad_clicks")
 }

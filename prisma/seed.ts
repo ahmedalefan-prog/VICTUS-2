@@ -186,6 +186,24 @@ async function seedServices(adminId: string) {
   console.log(`✓ Services: ${services.length} (+lab catalog)`);
 }
 
+// Default ad pricing rules per ad type (IQD / weekly).
+async function seedAdPricing() {
+  const rules: { adType: "BANNER" | "SPONSORED_PRODUCT" | "SPONSORED_JOB" | "SPONSORED_SERVICE"; price: number }[] = [
+    { adType: "BANNER", price: 50000 },
+    { adType: "SPONSORED_PRODUCT", price: 75000 },
+    { adType: "SPONSORED_JOB", price: 40000 },
+    { adType: "SPONSORED_SERVICE", price: 100000 },
+  ];
+  for (const r of rules) {
+    await prisma.adPricing.upsert({
+      where: { adType: r.adType },
+      update: {},
+      create: { adType: r.adType, price: r.price, unit: "WEEKLY" },
+    });
+  }
+  console.log(`✓ Ad pricing: ${rules.length}`);
+}
+
 async function main() {
   console.log("Seeding VICTUS (service platform)…");
   await seedGeography();
@@ -194,6 +212,7 @@ async function main() {
   await seedSettings();
   const adminId = await seedSuperAdmin();
   await seedServices(adminId);
+  await seedAdPricing();
   console.log("Done.");
 }
 

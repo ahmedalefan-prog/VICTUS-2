@@ -4,6 +4,7 @@ import { NAV_GROUPS } from "@/lib/nav";
 import { can } from "@/lib/rbac";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const metadata = { title: "لوحة التحكم" };
 
@@ -23,6 +24,8 @@ export default async function DashboardPage() {
         title={`مرحباً، ${session.user.name ?? "بك"}`}
         description="منصة VICTUS — خدمات المختبر والسوق والصيانة في مكان واحد."
       />
+
+      <AdSlot placement="DASHBOARD" />
 
       <div className="space-y-6">
         {groups.map((group) => {

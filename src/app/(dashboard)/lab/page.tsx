@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CatalogShop } from "@/components/services/catalog-shop";
 import { LabOrderBuilder } from "@/components/services/lab-order-builder";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const metadata = { title: "المختبر" };
 
@@ -41,6 +42,8 @@ export default async function LabPage() {
           )}
         </div>
       </PageHeader>
+
+      <AdSlot placement="LAB" />
 
       {canOrder ? (
         <LabOrderBuilder

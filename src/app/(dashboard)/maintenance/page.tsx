@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wrench, ChevronLeft } from "lucide-react";
 import { MaintenanceRequestForm } from "@/components/services/maintenance-request-form";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const metadata = { title: "خدمة الصيانة" };
 
@@ -68,6 +69,8 @@ export default async function MaintenancePage() {
           <Badge tone="warning">{open.length} نشط</Badge>
         </PageHeader>
 
+        <AdSlot placement="MAINTENANCE" />
+
         <Card className="mb-5">
           <h3 className="mb-3 font-semibold text-fg">الطلبات النشطة</h3>
           {open.length === 0 ? (
@@ -106,6 +109,8 @@ export default async function MaintenancePage() {
         <PageHeader title={service.name} description={service.about ?? "خدمة الصيانة الداخلية"}>
           <Badge tone="primary">خدمة رسمية</Badge>
         </PageHeader>
+
+        <AdSlot placement="MAINTENANCE" />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <MaintenanceRequestForm devices={devices.map((dv) => ({ id: dv.id, label: `${dv.name} — ${dv.clinic.name}` }))} />
