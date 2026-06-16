@@ -175,6 +175,47 @@ enum AdLeadType {
   SALE
 }
 
+// ─── HR (per-service teams) ───
+enum EmployeeStatus {
+  ACTIVE
+  VACATION
+  SUSPENDED
+  RESIGNED
+  TERMINATED
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  EMERGENCY
+  UNPAID
+}
+
+enum LeaveStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum SalaryType {
+  MONTHLY
+  DAILY
+}
+
+enum PayrollStatus {
+  DRAFT
+  FINALIZED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+  HOLIDAY
+}
+
 // ─── maintenance service (internal, no public catalog) ───
 enum MaintenancePriority {
   LOW
@@ -233,6 +274,8 @@ model User {
   jobApplications  JobApplication[]  @relation("JobApplicant")
   candidateProfile CandidateProfile?
   advertiser       Advertiser?
+  employeeLinks    Employee[]        @relation("EmployeeUser")
+  reviewedLeaves   LeaveRequest[]    @relation("LeaveReviewer")
 
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
@@ -487,6 +530,8 @@ model Service {
   transactions  PartnerTransaction[]
   ratings       LabRating[]
   maintenanceRequests MaintenanceRequest[]
+  employees     Employee[]
+  payrollRuns   PayrollRun[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -905,4 +950,116 @@ model AdClick {
 
   @@index([campaignId])
   @@map("ad_clicks")
+}
+
+// ─────────────────────────── HR (per-service teams) ───────────────────────────
+// Each service (lab/market/maintenance) has its own staff, managed by the
+// service MANAGER (or platform admin): employees · daily attendance · leaves
+// (LEV-) · monthly payroll runs (PAY-) with absence-deduction payslips.
+
+model Employee {
+  id             String         @id @default(cuid())
+  employeeNumber String         @unique // EMP-#####
+  serviceId      String
+  service        Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId         String? // optional link to a platform account
+  user           User?          @relation("EmployeeUser", fields: [userId], references: [id])
+  fullName       String
+  phone          String?
+  position       String?
+  baseSalary     Decimal        @default(0) @db.Decimal(14, 2) // IQD (monthly or daily rate)
+  salaryType     SalaryType     @default(MONTHLY)
+  hireDate       DateTime?
+  status         EmployeeStatus @default(ACTIVE)
+  attendance     Attendance[]
+  leaveRequests  LeaveRequest[]
+  payslips       Payslip[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([serviceId, status])
+  @@map("employees")
+}
+
+// One attendance row per employee/day.
+model Attendance {
+  id          String           @id @default(cuid())
+  employeeId  String
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime         @db.Date
+  checkIn     DateTime?
+  checkOut    DateTime?
+  status      AttendanceStatus @default(PRESENT)
+  lateMinutes Int              @default(0)
+  workMinutes Int              @default(0)
+  note        String?
+  createdAt   DateTime         @default(now())
+
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
+  @@map("attendance")
+}
+
+// Leave request (LEV-) — approval stamps its days as LEAVE in attendance.
+model LeaveRequest {
+  id           String      @id @default(cuid())
+  leaveNumber  String      @unique // LEV-#####
+  employeeId   String
+  employee     Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type         LeaveType   @default(ANNUAL)
+  startDate    DateTime    @db.Date
+  endDate      DateTime    @db.Date
+  days         Int
+  reason       String?
+  status       LeaveStatus @default(SUBMITTED)
+  reviewedById String?
+  reviewedBy   User?       @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  reviewNote   String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([employeeId, status])
+  @@map("leave_requests")
+}
+
+// Monthly payroll run for a service (PAY-) — generates payslips for active staff.
+model PayrollRun {
+  id            String        @id @default(cuid())
+  payrollNumber String        @unique // PAY-#####
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  year          Int
+  month         Int // 1–12
+  status        PayrollStatus @default(DRAFT)
+  createdById   String
+  payslips      Payslip[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([serviceId, year, month])
+  @@index([serviceId])
+  @@map("payroll_runs")
+}
+
+// Employee payslip: net = base + allowances − (absenceDeduction + manualDeduction).
+model Payslip {
+  id               String     @id @default(cuid())
+  payrollRunId     String
+  payrollRun       PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId       String
+  employee         Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  baseAmount       Decimal    @db.Decimal(14, 2)
+  allowances       Decimal    @default(0) @db.Decimal(14, 2)
+  absenceDeduction Decimal    @default(0) @db.Decimal(14, 2)
+  manualDeduction  Decimal    @default(0) @db.Decimal(14, 2)
+  netSalary        Decimal    @db.Decimal(14, 2)
+  presentDays      Int        @default(0)
+  absentDays       Int        @default(0)
+  leaveDays        Int        @default(0)
+  note             String?
+
+  @@unique([payrollRunId, employeeId])
+  @@index([employeeId])
+  @@map("payslips")
 }

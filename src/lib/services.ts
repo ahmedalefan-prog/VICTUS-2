@@ -71,6 +71,27 @@ export async function resolveMyService(userId: string) {
   return membership?.service ?? null;
 }
 
+// Services the caller manages as a team owner (MANAGER) — all of them for admins.
+// Used to scope HR (employees / attendance / leaves / payroll) per service.
+export async function myManagedServices(session: SessionLike & { user: { id: string } }) {
+  if (isPlatformAdmin(session)) {
+    return prisma.service.findMany({ orderBy: { createdAt: "asc" } });
+  }
+  const memberships = await prisma.serviceMember.findMany({
+    where: { userId: session.user.id, role: "MANAGER" },
+    include: { service: true },
+    orderBy: { createdAt: "asc" },
+  });
+  return memberships.map((m) => m.service);
+}
+
+// Asserts the caller manages (MANAGER) the given service — admins pass through.
+export async function assertServiceManager(serviceId: string, session: SessionLike) {
+  if (isPlatformAdmin(session)) return;
+  const role = await myServiceRole(serviceId, session.user.id);
+  if (role !== "MANAGER") throw new Error("تحتاج صلاحية مدير على هذه الخدمة");
+}
+
 // Requesters (clinics / doctors) may place orders — has CREATE on the service.
 export function canRequest(session: SessionLike, type: "LAB" | "MARKET" | "MAINTENANCE"): boolean {
   return can(session.user.permissions, SERVICE_TYPE_META[type].resource, "CREATE");
