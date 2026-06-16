@@ -78,7 +78,8 @@ async function recomputeParts(tx: Prisma.TransactionClient, requestId: string) {
 // ─────────────────────── create (doctor) ───────────────────────
 
 const createSchema = z.object({
-  deviceName: z.string().min(2, "حدّد الجهاز المعطّل").max(200),
+  deviceId: z.string().optional(),
+  deviceName: z.string().max(200).optional(),
   description: z.string().min(5, "صف العطل بإيجاز").max(2000),
   priority: z.enum(MAINTENANCE_PRIORITIES as [string, ...string[]]).default("MEDIUM"),
   mediaUrls: z.array(z.string().url()).max(20).optional(),
@@ -93,13 +94,32 @@ export async function createRequest(input: z.infer<typeof createSchema>): Promis
   const service = await getService("MAINTENANCE");
   if (!service || !service.isActive || service.mode === "OFF") throw new Error("خدمة الصيانة غير متاحة");
 
+  // Optional link to a registered device — verified to belong to the requester.
+  // A linked device snapshots its name + clinic; otherwise a free-text name is required.
+  let deviceId: string | null = null;
+  let clinicId: string | null = null;
+  let deviceName = (d.deviceName ?? "").trim();
+  if (d.deviceId) {
+    const device = await prisma.device.findUnique({
+      where: { id: d.deviceId },
+      include: { clinic: { select: { id: true, ownerId: true, name: true } } },
+    });
+    if (!device || device.clinic.ownerId !== session.user.id) throw new Error("الجهاز غير صالح");
+    deviceId = device.id;
+    clinicId = device.clinic.id;
+    deviceName = `${device.name} — ${device.clinic.name}`;
+  }
+  if (deviceName.length < 2) throw new Error("حدّد الجهاز المعطّل");
+
   const requestNumber = await nextRequestNumber();
   const req = await prisma.maintenanceRequest.create({
     data: {
       requestNumber,
       serviceId: service.id,
       requesterId: session.user.id,
-      deviceName: d.deviceName,
+      deviceId,
+      clinicId,
+      deviceName,
       description: d.description,
       priority: d.priority as never,
       status: "NEW",
@@ -108,8 +128,8 @@ export async function createRequest(input: z.infer<typeof createSchema>): Promis
   });
 
   await recordAudit({ actorId: session.user.id, action: "maintenance.created", entityType: "MaintenanceRequest", entityId: req.id, metadata: { requestNumber } });
-  await logActivity({ actorId: session.user.id, verb: "maintenance.requested", summary: `أنشأ طلب صيانة ${requestNumber}: ${d.deviceName}`, entityType: "MaintenanceRequest", entityId: req.id });
-  await notifyTeam(service.id, "maintenance.requested", { no: requestNumber, device: d.deviceName });
+  await logActivity({ actorId: session.user.id, verb: "maintenance.requested", summary: `أنشأ طلب صيانة ${requestNumber}: ${deviceName}`, entityType: "MaintenanceRequest", entityId: req.id });
+  await notifyTeam(service.id, "maintenance.requested", { no: requestNumber, device: deviceName });
 
   revalidatePath("/maintenance");
   return { id: req.id };

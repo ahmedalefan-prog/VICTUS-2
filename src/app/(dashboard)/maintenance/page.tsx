@@ -89,10 +89,17 @@ export default async function MaintenancePage() {
 
   // ── Requester (doctor / clinic): the request form + their own requests only ──
   if (canRequest(session, "MAINTENANCE")) {
-    const requests = await prisma.maintenanceRequest.findMany({
-      where: { serviceId: service.id, requesterId: session.user.id },
-      orderBy: { createdAt: "desc" },
-    });
+    const [requests, devices] = await Promise.all([
+      prisma.maintenanceRequest.findMany({
+        where: { serviceId: service.id, requesterId: session.user.id },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.device.findMany({
+        where: { clinic: { ownerId: session.user.id } },
+        include: { clinic: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
     return (
       <>
@@ -101,7 +108,7 @@ export default async function MaintenancePage() {
         </PageHeader>
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <MaintenanceRequestForm />
+          <MaintenanceRequestForm devices={devices.map((dv) => ({ id: dv.id, label: `${dv.name} — ${dv.clinic.name}` }))} />
 
           <Card>
             <h3 className="mb-3 font-semibold text-fg">طلباتي ({requests.length})</h3>

@@ -9,14 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select, Field } from "@/components/ui/input";
 import { Wrench } from "lucide-react";
 
-export function MaintenanceRequestForm() {
+export function MaintenanceRequestForm({ devices = [] }: { devices?: { id: string; label: string }[] }) {
   const router = useRouter();
+  const [deviceId, setDeviceId] = useState("");
   const [deviceName, setDeviceName] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [media, setMedia] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const manual = deviceId === "";
+  const ready = description.trim().length >= 5 && (!manual || deviceName.trim().length >= 2);
 
   function submit() {
     setError(null);
@@ -26,7 +30,13 @@ export function MaintenanceRequestForm() {
       .filter(Boolean);
     startTransition(async () => {
       try {
-        const { id } = await createRequest({ deviceName, description, priority, mediaUrls });
+        const { id } = await createRequest({
+          deviceId: deviceId || undefined,
+          deviceName: manual ? deviceName : undefined,
+          description,
+          priority,
+          mediaUrls,
+        });
         router.push(`/maintenance/${id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : "تعذّر إرسال الطلب");
@@ -43,9 +53,22 @@ export function MaintenanceRequestForm() {
       <div className="space-y-4">
         {error && <p className="text-sm text-danger">{error}</p>}
 
-        <Field label="الجهاز المعطّل">
-          <Input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} placeholder="مثال: كرسي الأسنان — العيادة الرئيسية" maxLength={200} />
-        </Field>
+        {devices.length > 0 && (
+          <Field label="جهاز مسجّل">
+            <Select value={deviceId} onChange={(e) => setDeviceId(e.target.value)}>
+              <option value="">— إدخال يدوي —</option>
+              {devices.map((dv) => (
+                <option key={dv.id} value={dv.id}>{dv.label}</option>
+              ))}
+            </Select>
+          </Field>
+        )}
+
+        {manual && (
+          <Field label="الجهاز المعطّل">
+            <Input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} placeholder="مثال: كرسي الأسنان — العيادة الرئيسية" maxLength={200} />
+          </Field>
+        )}
 
         <Field label="وصف العطل">
           <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="صف المشكلة بإيجاز…" maxLength={2000} />
@@ -63,7 +86,7 @@ export function MaintenanceRequestForm() {
           <Textarea value={media} onChange={(e) => setMedia(e.target.value)} placeholder="https://…" className="min-h-16" dir="ltr" />
         </Field>
 
-        <Button className="w-full" disabled={pending || !deviceName.trim() || description.trim().length < 5} onClick={submit}>
+        <Button className="w-full" disabled={pending || !ready} onClick={submit}>
           {pending ? "جارٍ الإرسال…" : "إرسال الطلب"}
         </Button>
       </div>
