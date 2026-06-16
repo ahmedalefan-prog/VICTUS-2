@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 import { resolveMyService } from "@/lib/services";
-import { NEGOTIATION_STATUS_META, FULFILLMENT_STATUS_META } from "@/lib/services-meta";
+import { FULFILLMENT_STATUS_META } from "@/lib/services-meta";
 import { formatIQD, formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
@@ -33,36 +33,27 @@ export default async function ConsoleReportsPage() {
     );
   }
 
-  const [orders, priceLogs, negEvents, txAgg] = await Promise.all([
+  const [orders, priceLogs, txAgg] = await Promise.all([
     prisma.serviceOrder.findMany({
       where: { serviceId: service.id },
-      select: { negotiationStatus: true, fulfillmentStatus: true, agreedTotal: true },
+      select: { fulfillmentStatus: true, agreedTotal: true },
     }),
     prisma.priceChangeLog.findMany({ where: { serviceId: service.id }, orderBy: { createdAt: "desc" }, take: 40 }),
-    prisma.negotiationEvent.findMany({ where: { order: { serviceId: service.id } }, select: { actorId: true, actorName: true } }),
     prisma.partnerTransaction.aggregate({ where: { serviceId: service.id }, _sum: { agreedAmount: true }, _count: true }),
   ]);
 
-  const negCounts: Record<string, number> = {};
   const fulCounts: Record<string, number> = {};
   let agreedValue = 0;
+  let activeCount = 0;
   for (const o of orders) {
-    if (o.negotiationStatus !== "AGREED") {
-      negCounts[o.negotiationStatus] = (negCounts[o.negotiationStatus] ?? 0) + 1;
-    } else {
-      fulCounts[o.fulfillmentStatus] = (fulCounts[o.fulfillmentStatus] ?? 0) + 1;
-      if (o.agreedTotal !== null) agreedValue += Number(o.agreedTotal);
-    }
+    fulCounts[o.fulfillmentStatus] = (fulCounts[o.fulfillmentStatus] ?? 0) + 1;
+    if (o.fulfillmentStatus !== "CANCELLED" && o.agreedTotal !== null) agreedValue += Number(o.agreedTotal);
+    if (!["COMPLETED", "CANCELLED"].includes(o.fulfillmentStatus)) activeCount++;
   }
 
-  const activity = new Map<string, { name: string; negotiations: number; priceEdits: number }>();
-  for (const e of negEvents) {
-    const a = activity.get(e.actorId) ?? { name: e.actorName, negotiations: 0, priceEdits: 0 };
-    a.negotiations++;
-    activity.set(e.actorId, a);
-  }
+  const activity = new Map<string, { name: string; priceEdits: number }>();
   for (const p of priceLogs) {
-    const a = activity.get(p.actorId) ?? { name: p.actorName, negotiations: 0, priceEdits: 0 };
+    const a = activity.get(p.actorId) ?? { name: p.actorName, priceEdits: 0 };
     a.priceEdits++;
     activity.set(p.actorId, a);
   }
@@ -87,8 +78,8 @@ export default async function ConsoleReportsPage() {
           <p className="mt-0.5 text-xs text-fg-faint">{txAgg._count} معاملة</p>
         </Card>
         <Card>
-          <p className="text-xs text-fg-muted">طلبات قيد التفاوض</p>
-          <p className="mt-1 text-xl font-bold text-fg">{(negCounts.PROPOSED ?? 0) + (negCounts.COUNTERED ?? 0)}</p>
+          <p className="text-xs text-fg-muted">طلبات نشطة</p>
+          <p className="mt-1 text-xl font-bold text-fg">{activeCount}</p>
         </Card>
       </div>
 
@@ -96,12 +87,6 @@ export default async function ConsoleReportsPage() {
         <Card>
           <h3 className="mb-3 font-semibold text-fg">الطلبات حسب الحالة</h3>
           <div className="space-y-2 text-sm">
-            {Object.entries(negCounts).map(([s, n]) => (
-              <div key={s} className="flex items-center justify-between">
-                <Badge tone={NEGOTIATION_STATUS_META[s]?.tone ?? "muted"}>{NEGOTIATION_STATUS_META[s]?.label ?? s}</Badge>
-                <span className="font-medium text-fg">{n}</span>
-              </div>
-            ))}
             {Object.entries(fulCounts).map(([s, n]) => (
               <div key={s} className="flex items-center justify-between">
                 <Badge tone={FULFILLMENT_STATUS_META[s]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[s]?.label ?? s}</Badge>
@@ -121,7 +106,7 @@ export default async function ConsoleReportsPage() {
               {[...activity.values()].map((a, i) => (
                 <li key={i} className="flex items-center justify-between rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2">
                   <span className="font-medium text-fg">{a.name}</span>
-                  <span className="text-xs text-fg-muted">{a.negotiations} تفاوض · {a.priceEdits} تعديل سعر</span>
+                  <span className="text-xs text-fg-muted">{a.priceEdits} تعديل سعر</span>
                 </li>
               ))}
             </ul>

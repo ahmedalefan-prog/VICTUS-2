@@ -31,10 +31,6 @@ const itemSchema = z.object({
   priceVip: num,
   unit: z.string().optional().or(z.literal("")),
   stock: num,
-  bulkThreshold: z.preprocess(
-    (v) => (v === "" || v === undefined || v === null ? undefined : Number(v)),
-    z.number().int().positive("حدّ غير صالح").optional(),
-  ),
 });
 
 export async function saveCatalogItem(formData: FormData): Promise<void> {
@@ -75,7 +71,6 @@ export async function saveCatalogItem(formData: FormData): Promise<void> {
           priceVip: d.priceVip ?? null,
           unit: d.unit || null,
           stock: d.stock ?? null,
-          bulkThreshold: d.bulkThreshold ?? null,
         },
       });
       for (const c of changes) {

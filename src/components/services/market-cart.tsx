@@ -21,7 +21,6 @@ export interface MarketItem {
   priceNormal: number;
   unit: string;
   stock: number | null;
-  bulkThreshold: number | null;
 }
 
 export function MarketCart({ items, canOrder }: { items: MarketItem[]; canOrder: boolean }) {
@@ -29,7 +28,6 @@ export function MarketCart({ items, canOrder }: { items: MarketItem[]; canOrder:
   const [cart, setCart] = useState<Record<string, number>>({});
   const [category, setCategory] = useState("");
   const [condition, setCondition] = useState("");
-  const [proposedTotal, setProposedTotal] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -51,25 +49,17 @@ export function MarketCart({ items, canOrder }: { items: MarketItem[]; canOrder:
 
   const cartLines = Object.entries(cart).map(([id, qty]) => {
     const item = byId.get(id)!;
-    const qualifiesBulk = item.bulkThreshold != null && qty >= item.bulkThreshold;
-    return { id, item, qty, subtotal: item.priceNormal * qty, qualifiesBulk };
+    return { id, item, qty, subtotal: item.priceNormal * qty };
   });
   const listedTotal = cartLines.reduce((s, l) => s + l.subtotal, 0);
-  const canNegotiate = cartLines.some((l) => l.qualifiesBulk);
   const empty = cartLines.length === 0;
 
-  function submit(mode: "LISTED" | "NEGOTIATE") {
+  function submit() {
     setError(null);
     const lines = cartLines.map((l) => ({ catalogItemId: l.id, tier: "NORMAL" as const, quantity: l.qty }));
     startTransition(async () => {
       try {
-        const { id } = await createOrder({
-          serviceType: "MARKET",
-          mode,
-          proposedTotal: mode === "NEGOTIATE" ? Number(proposedTotal) : undefined,
-          note: note || undefined,
-          lines,
-        });
+        const { id } = await createOrder({ serviceType: "MARKET", note: note || undefined, lines });
         router.push(`/market/orders/${id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : "تعذّر إنشاء الطلب");
@@ -115,7 +105,6 @@ export function MarketCart({ items, canOrder }: { items: MarketItem[]; canOrder:
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="muted">{formatIQD(it.priceNormal)}{it.unit ? ` / ${it.unit}` : ""}</Badge>
             {it.stock !== null && <Badge tone={it.stock > 0 ? "info" : "danger"}>المخزون: {it.stock}</Badge>}
-            {it.bulkThreshold != null && <Badge tone="primary">جملة من {it.bulkThreshold}</Badge>}
           </div>
           {canOrder && (
             <Button size="sm" className="mt-auto" onClick={() => add(it.id)}><Plus className="h-3.5 w-3.5" /> أضف للطلب</Button>
@@ -167,7 +156,6 @@ export function MarketCart({ items, canOrder }: { items: MarketItem[]; canOrder:
                     <div>
                       <p className="text-sm font-medium text-fg">{l.item.name}</p>
                       <span className="text-xs text-fg-muted">{formatIQD(l.item.priceNormal)}</span>
-                      {l.qualifiesBulk && <Badge tone="primary" className="mr-1">سعر جملة متاح</Badge>}
                     </div>
                     <button onClick={() => setQty(l.id, 0)} className="text-fg-faint hover:text-danger"><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -194,19 +182,9 @@ export function MarketCart({ items, canOrder }: { items: MarketItem[]; canOrder:
 
             {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
-            <Button className="mt-3 w-full" disabled={pending} onClick={() => submit("LISTED")}>
+            <Button className="mt-3 w-full" disabled={pending} onClick={() => submit()}>
               {pending ? "جارٍ الإرسال…" : "اطلب بالسعر المعروض"}
             </Button>
-
-            {canNegotiate && (
-              <div className="mt-3 rounded-lg border border-primary/30 bg-primary-soft/20 p-3">
-                <p className="mb-2 text-xs font-medium text-fg">بلغت كمية الجملة — يمكنك طلب سعر جملة (تفاوض)</p>
-                <div className="flex gap-2">
-                  <Input type="number" min="0" step="any" dir="ltr" value={proposedTotal} onChange={(e) => setProposedTotal(e.target.value)} placeholder="الإجمالي المقترح" />
-                  <Button variant="outline" disabled={pending || !proposedTotal || Number(proposedTotal) <= 0} onClick={() => submit("NEGOTIATE")}>اطلب سعر جملة</Button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </Card>

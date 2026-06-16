@@ -49,7 +49,6 @@ export default async function MarketPage() {
           priceNormal: Number(it.priceNormal),
           unit: it.unit ?? "",
           stock: it.stock === null ? null : Number(it.stock),
-          bulkThreshold: it.bulkThreshold ?? null,
         }))}
       />
     </>

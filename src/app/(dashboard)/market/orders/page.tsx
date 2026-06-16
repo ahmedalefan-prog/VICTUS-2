@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
-import { NEGOTIATION_STATUS_META, FULFILLMENT_STATUS_META } from "@/lib/services-meta";
+import { FULFILLMENT_STATUS_META } from "@/lib/services-meta";
 import { formatIQD, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
@@ -41,11 +41,7 @@ export default async function MarketOrdersPage() {
                   <p className="mt-1 text-xs text-fg-muted">{o.service.name} · {o._count.items} عنصر · {formatDate(o.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {o.negotiationStatus !== "AGREED" ? (
-                    <Badge tone={NEGOTIATION_STATUS_META[o.negotiationStatus]?.tone ?? "muted"}>{NEGOTIATION_STATUS_META[o.negotiationStatus]?.label}</Badge>
-                  ) : (
-                    <Badge tone={FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.label}</Badge>
-                  )}
+                  <Badge tone={FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.label}</Badge>
                   {o.agreedTotal !== null && <span className="text-sm font-medium text-fg">{formatIQD(Number(o.agreedTotal))}</span>}
                   <ChevronLeft className="h-4 w-4 text-fg-faint" />
                 </div>

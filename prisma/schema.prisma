@@ -105,13 +105,6 @@ enum OrderTier {
   VIP
 }
 
-enum NegotiationStatus {
-  PROPOSED
-  COUNTERED
-  AGREED
-  CANCELLED
-}
-
 enum FulfillmentStatus {
   NEW
   RECEIVED
@@ -119,14 +112,6 @@ enum FulfillmentStatus {
   READY
   COMPLETED
   CANCELLED
-}
-
-enum NegotiationAction {
-  PROPOSE
-  COUNTER
-  ACCEPT
-  REJECT
-  CANCEL
 }
 
 enum TransactionStatus {
@@ -475,7 +460,6 @@ model CatalogItem {
   priceVip    Decimal?          @db.Decimal(14, 2)
   unit          String?
   stock         Decimal?        @db.Decimal(14, 2)
-  bulkThreshold Int? // market: qty at/above which wholesale negotiation unlocks (null = no negotiation)
   isActive      Boolean         @default(true)
   sortOrder     Int             @default(0)
   orderItems  OrderItem[]
@@ -497,16 +481,14 @@ model ServiceOrder {
   requester         User               @relation("OrderRequester", fields: [requesterId], references: [id])
   clinicId          String?
   clinic            Clinic?            @relation(fields: [clinicId], references: [id])
-  negotiationStatus NegotiationStatus  @default(PROPOSED)
   fulfillmentStatus FulfillmentStatus  @default(NEW)
-  agreedTotal       Decimal?           @db.Decimal(14, 2)
+  agreedTotal       Decimal?           @db.Decimal(14, 2) // order total at listed price
   currency          String             @default("IQD")
   note              String? // general case notes
   caseFiles         String[] // external URLs (STL / DICOM / images) — direct upload deferred
   cancelledById     String?
   cancelReason      String?
   items             OrderItem[]
-  negotiationEvents NegotiationEvent[]
   rating            LabRating?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -529,26 +511,9 @@ model OrderItem {
   shade         String? // VITA shade e.g. A2
   itemNotes     String?
   listedPrice   Decimal      @db.Decimal(14, 2)
-  proposedPrice Decimal?     @db.Decimal(14, 2)
-  agreedPrice   Decimal?     @db.Decimal(14, 2)
 
   @@index([orderId])
   @@map("order_items")
-}
-
-model NegotiationEvent {
-  id        String            @id @default(cuid())
-  orderId   String
-  order     ServiceOrder      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  actorId   String
-  actorName String
-  action    NegotiationAction
-  price     Decimal?          @db.Decimal(14, 2)
-  note      String?
-  createdAt DateTime          @default(now())
-
-  @@index([orderId])
-  @@map("negotiation_events")
 }
 
 model PriceChangeLog {

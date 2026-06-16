@@ -43,11 +43,6 @@ export const NOTIFICATION_EVENTS = {
     body: (d) => `طلب ${d.no} بقيمة ${d.amount}`,
     link: "/console",
   },
-  "order.negotiation": {
-    type: "ORDER",
-    title: "تحديث في التفاوض",
-    body: (d) => `طلب ${d.no}: ${d.action}`,
-  },
   "order.statusChanged": {
     type: "ORDER",
     title: "تحديث حالة الطلب",

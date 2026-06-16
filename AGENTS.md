@@ -18,8 +18,8 @@
 
 ## نواة الخدمات
 - `Service` (LAB/MARKET/MAINTENANCE — مملوكة للأدمن، وضع EXCLUSIVE) · `ServiceMember` (فريق داخلي بأدوار MANAGER/MEMBER) · عزل صارم: العضو يصل لخدمته فقط.
-- `CatalogItem` (سعر عادي/VIP، مخزون، condition للأجهزة) · `ServiceOrder` (ORD-) + `OrderItem` + `NegotiationEvent` (تفاوض) + `PriceChangeLog` + `PartnerTransaction` (توثيق الإدارة).
-- قواعد الطلب: التصفّح للجميع، الطلب للأطباء/العيادات (CREATE على lab/market/maintenance).
+- `CatalogItem` (سعر عادي/VIP، مخزون، condition للأجهزة) · `ServiceOrder` (ORD-) + `OrderItem` + `PriceChangeLog` + `PartnerTransaction` (توثيق الإدارة).
+- قواعد الطلب: التصفّح للجميع، الطلب للأطباء/العيادات (CREATE على lab/market/maintenance). **بلا تفاوض** — كل طلب بالسعر المعروض (المتّفق = المعروض) ويوثَّق فوراً، ثم دورة التنفيذ.
 
 ## أنواع الحسابات (6)
 SUPER_ADMIN · CLINIC_OWNER · DENTIST · SERVICE_MEMBER · JOB_SEEKER · ADVERTISER.

@@ -42,7 +42,6 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [caseFiles, setCaseFiles] = useState<string[]>([]);
   const [note, setNote] = useState("");
-  const [proposedTotal, setProposedTotal] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const teethInputRef = useRef<HTMLInputElement>(null);
@@ -103,13 +102,11 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
   const total = lines.reduce((s, l) => s + unit(l) * l.teeth.length, 0);
   const ready = lines.length > 0 && lines.every((l) => l.teeth.length > 0);
 
-  function submit(mode: "LISTED" | "NEGOTIATE") {
+  function submit() {
     setError(null);
     if (!ready) { setError("لكل خدمة يجب تحديد سنّ واحد على الأقل"); return; }
     const payload = {
       serviceType: "LAB" as const,
-      mode,
-      proposedTotal: mode === "NEGOTIATE" ? Number(proposedTotal) : undefined,
       note: note || undefined,
       caseFiles: caseFiles.filter((u) => u.trim()),
       lines: lines.map((l) => ({ catalogItemId: l.catalogItemId, tier: l.tier, quantity: l.teeth.length, teeth: l.teeth, shade: l.shade || undefined, itemNotes: l.itemNotes || undefined })),
@@ -231,16 +228,9 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
-            <Button className="w-full" disabled={pending || !ready} onClick={() => submit("LISTED")}>
+            <Button className="w-full" disabled={pending || !ready} onClick={() => submit()}>
               {pending ? "جارٍ الإرسال…" : "اطلب بالسعر المعروض"}
             </Button>
-            <div className="rounded-lg border border-border-soft p-3">
-              <p className="mb-2 text-xs font-medium text-fg-muted">أو اقترح سعراً للتفاوض</p>
-              <div className="flex gap-2">
-                <Input type="number" min="0" step="any" dir="ltr" value={proposedTotal} onChange={(e) => setProposedTotal(e.target.value)} placeholder="الإجمالي المقترح" />
-                <Button variant="outline" disabled={pending || !ready || !proposedTotal || Number(proposedTotal) <= 0} onClick={() => submit("NEGOTIATE")}>تفاوض</Button>
-              </div>
-            </div>
           </div>
         )}
       </Card>

@@ -4,17 +4,15 @@ import { requirePermission, isPlatformAdmin } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 import { myServiceRole } from "@/lib/services";
 import {
-  NEGOTIATION_STATUS_META,
   FULFILLMENT_STATUS_META,
   FULFILLMENT_TRANSITIONS,
-  NEGOTIATION_ACTION_LABEL,
 } from "@/lib/services-meta";
-import { formatIQD, formatDateTime } from "@/lib/format";
+import { formatIQD } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight } from "lucide-react";
-import { OrderControls, NegotiationThread } from "@/components/services/order-controls";
+import { OrderControls } from "@/components/services/order-controls";
 
 export const metadata = { title: "تفاصيل الطلب" };
 
@@ -28,7 +26,6 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
       items: true,
       service: { select: { name: true } },
       requester: { select: { fullName: true, email: true } },
-      negotiationEvents: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!order) notFound();
@@ -39,14 +36,9 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
   const isMember = isAdmin || Boolean(memberRole);
   if (!isRequester && !isMember) notFound();
 
-  const negotiating = ["PROPOSED", "COUNTERED"].includes(order.negotiationStatus);
-  const agreed = order.negotiationStatus === "AGREED";
-  const lastProposal = [...order.negotiationEvents].reverse().find((e) => e.action === "PROPOSE" || e.action === "COUNTER");
-  const currentProposed = lastProposal?.price ? Number(lastProposal.price) : null;
-  const iProposedLast = lastProposal?.actorId === session.user.id;
   const listedTotal = order.items.reduce((s, it) => s + Number(it.listedPrice) * it.quantity, 0);
   const allowedTransitions = FULFILLMENT_TRANSITIONS[order.fulfillmentStatus] ?? [];
-  const closed = ["COMPLETED", "CANCELLED"].includes(order.fulfillmentStatus) || order.negotiationStatus === "CANCELLED";
+  const closed = ["COMPLETED", "CANCELLED"].includes(order.fulfillmentStatus);
 
   return (
     <>
@@ -55,10 +47,7 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
       </Link>
 
       <PageHeader title={order.orderNumber} description={order.service.name}>
-        <div className="flex items-center gap-2">
-          <Badge tone={NEGOTIATION_STATUS_META[order.negotiationStatus]?.tone ?? "muted"}>{NEGOTIATION_STATUS_META[order.negotiationStatus]?.label}</Badge>
-          {agreed && <Badge tone={FULFILLMENT_STATUS_META[order.fulfillmentStatus]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[order.fulfillmentStatus]?.label}</Badge>}
-        </div>
+        <Badge tone={FULFILLMENT_STATUS_META[order.fulfillmentStatus]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[order.fulfillmentStatus]?.label}</Badge>
       </PageHeader>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -100,23 +89,6 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
             {order.note && <p className="mt-3 text-xs text-fg-muted">ملاحظة: {order.note}</p>}
             {order.cancelReason && <p className="mt-2 text-xs text-danger">سبب الإلغاء: {order.cancelReason}</p>}
           </Card>
-
-          {order.negotiationEvents.length > 0 && (
-            <Card>
-              <h3 className="mb-3 font-semibold text-fg">سجل التفاوض</h3>
-              <NegotiationThread
-                events={order.negotiationEvents.map((e) => ({
-                  id: e.id,
-                  actorName: e.actorName,
-                  action: NEGOTIATION_ACTION_LABEL[e.action] ?? e.action,
-                  price: e.price === null ? null : formatIQD(Number(e.price)),
-                  note: e.note ?? "",
-                  at: formatDateTime(e.createdAt),
-                  mine: e.actorId === session.user.id,
-                }))}
-              />
-            </Card>
-          )}
         </div>
 
         <div className="space-y-5">
@@ -129,12 +101,7 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
           <OrderControls
             orderId={order.id}
             isMember={isMember}
-            negotiating={negotiating}
-            agreed={agreed}
             closed={closed}
-            currentProposed={currentProposed}
-            currentProposedLabel={currentProposed === null ? null : formatIQD(currentProposed)}
-            iProposedLast={iProposedLast}
             allowedTransitions={allowedTransitions}
             fulfillmentLabels={Object.fromEntries(allowedTransitions.map((s) => [s, FULFILLMENT_STATUS_META[s]?.label ?? s]))}
           />

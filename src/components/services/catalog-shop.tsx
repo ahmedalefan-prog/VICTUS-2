@@ -40,7 +40,6 @@ export function CatalogShop({
   const isLab = serviceType === "LAB";
   const resource = SERVICE_TYPE_META[serviceType].resource;
   const [cart, setCart] = useState<Record<string, Line>>({});
-  const [proposedTotal, setProposedTotal] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -72,18 +71,12 @@ export function CatalogShop({
   const listedTotal = cartLines.reduce((s, l) => s + l.subtotal, 0);
   const empty = cartLines.length === 0;
 
-  function submit(mode: "LISTED" | "NEGOTIATE") {
+  function submit() {
     setError(null);
     const lines = cartLines.map((l) => ({ catalogItemId: l.id, tier: l.tier, quantity: l.qty }));
     startTransition(async () => {
       try {
-        const { id } = await createOrder({
-          serviceType,
-          mode,
-          proposedTotal: mode === "NEGOTIATE" ? Number(proposedTotal) : undefined,
-          note: note || undefined,
-          lines,
-        });
+        const { id } = await createOrder({ serviceType, note: note || undefined, lines });
         router.push(`/${resource}/orders/${id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : "تعذّر إنشاء الطلب");
@@ -206,19 +199,9 @@ export function CatalogShop({
 
             {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
-            <Button className="mt-3 w-full" disabled={pending} onClick={() => submit("LISTED")}>
+            <Button className="mt-3 w-full" disabled={pending} onClick={() => submit()}>
               {pending ? "جارٍ الإرسال…" : "اطلب بالسعر المعروض"}
             </Button>
-
-            <div className="mt-3 rounded-lg border border-border-soft p-3">
-              <p className="mb-2 text-xs font-medium text-fg-muted">أو اقترح سعراً للتفاوض</p>
-              <div className="flex gap-2">
-                <Input type="number" min="0" step="any" dir="ltr" value={proposedTotal} onChange={(e) => setProposedTotal(e.target.value)} placeholder="الإجمالي المقترح" />
-                <Button variant="outline" disabled={pending || !proposedTotal || Number(proposedTotal) <= 0} onClick={() => submit("NEGOTIATE")}>
-                  تفاوض
-                </Button>
-              </div>
-            </div>
           </>
         )}
       </Card>

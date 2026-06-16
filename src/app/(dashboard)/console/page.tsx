@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/guard";
 import { prisma } from "@/lib/prisma";
 import { resolveMyService } from "@/lib/services";
-import { SERVICE_TYPE_META, NEGOTIATION_STATUS_META, FULFILLMENT_STATUS_META } from "@/lib/services-meta";
+import { SERVICE_TYPE_META, FULFILLMENT_STATUS_META } from "@/lib/services-meta";
 import { formatIQD, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
@@ -44,7 +44,7 @@ export default async function ConsolePage() {
   ]);
 
   const activeOrders = orders.filter(
-    (o) => o.negotiationStatus !== "CANCELLED" && !["COMPLETED", "CANCELLED"].includes(o.fulfillmentStatus),
+    (o) => !["COMPLETED", "CANCELLED"].includes(o.fulfillmentStatus),
   ).length;
 
   return (
@@ -76,11 +76,7 @@ export default async function ConsolePage() {
                     <span className="mr-2 text-xs text-fg-muted">{o.requester.fullName} · {o._count.items} عنصر · {formatDate(o.createdAt)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {o.negotiationStatus !== "AGREED" ? (
-                      <Badge tone={NEGOTIATION_STATUS_META[o.negotiationStatus]?.tone ?? "muted"}>{NEGOTIATION_STATUS_META[o.negotiationStatus]?.label}</Badge>
-                    ) : (
-                      <Badge tone={FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.label}</Badge>
-                    )}
+                    <Badge tone={FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.tone ?? "muted"}>{FULFILLMENT_STATUS_META[o.fulfillmentStatus]?.label}</Badge>
                     {o.agreedTotal !== null && <span className="text-sm font-medium text-fg">{formatIQD(Number(o.agreedTotal))}</span>}
                     <ChevronLeft className="h-4 w-4 text-fg-faint" />
                   </div>
@@ -104,7 +100,6 @@ export default async function ConsolePage() {
           priceVip: it.priceVip === null ? null : Number(it.priceVip),
           unit: it.unit ?? "",
           stock: it.stock === null ? null : Number(it.stock),
-          bulkThreshold: it.bulkThreshold ?? null,
           isActive: it.isActive,
         }))}
       />

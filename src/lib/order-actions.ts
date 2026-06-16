@@ -68,7 +68,7 @@ async function createTransaction(
 
 async function notifyServiceMembers(
   serviceId: string,
-  event: "order.received" | "order.negotiation" | "order.cancelled",
+  event: "order.received" | "order.cancelled",
   data: Record<string, string | number>,
 ) {
   const members = await prisma.serviceMember.findMany({
@@ -78,7 +78,7 @@ async function notifyServiceMembers(
   await Promise.all(members.map((m) => dispatchNotification({ event, userId: m.userId, data })));
 }
 
-// ─────────────────────── create order (cart → order) ───────────────────────
+// ─────────────────────── create order (cart → order at listed price) ───────────────────────
 
 const lineSchema = z.object({
   catalogItemId: z.string().min(1),
@@ -91,8 +91,6 @@ const lineSchema = z.object({
 
 const createSchema = z.object({
   serviceType: z.enum(["LAB", "MARKET", "MAINTENANCE"]),
-  mode: z.enum(["LISTED", "NEGOTIATE"]),
-  proposedTotal: z.number().nonnegative().optional(),
   note: z.string().max(2000).optional(),
   caseFiles: z.array(z.string().url()).max(20).optional(),
   lines: z.array(lineSchema).min(1, "السلة فارغة"),
@@ -127,21 +125,6 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
   });
   const listedTotal = itemData.reduce((s, it) => s + it.listedPrice * it.quantity, 0);
 
-  if (d.mode === "NEGOTIATE" && (d.proposedTotal === undefined || d.proposedTotal <= 0)) {
-    throw new Error("أدخل السعر المقترح للتفاوض");
-  }
-
-  // Market wholesale gate: negotiation only when a line reaches its bulk threshold.
-  if (d.mode === "NEGOTIATE" && d.serviceType === "MARKET") {
-    const qualifies = d.lines.some((l) => {
-      const ci = byId.get(l.catalogItemId);
-      const teethLen = (l.teeth ?? []).length;
-      const qty = teethLen > 0 ? teethLen : l.quantity;
-      return ci?.bulkThreshold != null && qty >= ci.bulkThreshold;
-    });
-    if (!qualifies) throw new Error("التفاوض متاح فقط عند بلوغ حدّ كمية الجملة");
-  }
-
   const orderNumber = await nextOrderNumber();
   const name = actorName(session);
   const tier = uniformTier(itemData);
@@ -156,9 +139,8 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
         requesterId: session.user.id,
         note: d.note || null,
         caseFiles: d.caseFiles ?? [],
-        negotiationStatus: d.mode === "LISTED" ? "AGREED" : "PROPOSED",
         fulfillmentStatus: "NEW",
-        agreedTotal: d.mode === "LISTED" ? listedTotal : null,
+        agreedTotal: listedTotal,
         items: {
           create: itemData.map((it) => ({
             catalogItemId: it.catalogItemId,
@@ -169,112 +151,22 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
             shade: it.shade,
             itemNotes: it.itemNotes,
             listedPrice: it.listedPrice,
-            agreedPrice: d.mode === "LISTED" ? it.listedPrice : null,
           })),
         },
       },
     });
 
-    if (d.mode === "LISTED") {
-      await tx.negotiationEvent.create({
-        data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "ACCEPT", price: listedTotal, note: "قبول بالسعر المعروض" },
-      });
-      await createTransaction(tx, order, service.name, name, label, tier, listedTotal);
-    } else {
-      await tx.negotiationEvent.create({
-        data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "PROPOSE", price: d.proposedTotal!, note: d.note || null },
-      });
-    }
+    await createTransaction(tx, order, service.name, name, label, tier, listedTotal);
     return order;
   });
 
-  await recordAudit({ actorId: session.user.id, action: "order.created", entityType: "ServiceOrder", entityId: created.id, metadata: { mode: d.mode, orderNumber } });
+  await recordAudit({ actorId: session.user.id, action: "order.created", entityType: "ServiceOrder", entityId: created.id, metadata: { orderNumber } });
   await logActivity({ actorId: session.user.id, verb: "order.created", summary: `أنشأ طلباً ${orderNumber} لدى ${service.name}`, entityType: "ServiceOrder", entityId: created.id });
-  await notifyServiceMembers(service.id, "order.received", {
-    no: orderNumber,
-    amount: formatIQD(d.mode === "LISTED" ? listedTotal : d.proposedTotal!),
-  });
+  await notifyServiceMembers(service.id, "order.received", { no: orderNumber, amount: formatIQD(listedTotal) });
 
   revalidatePath(`/${resource}/orders`);
   revalidatePath("/console");
   return { id: created.id };
-}
-
-// ─────────────────────── negotiation ───────────────────────
-
-const negotiateSchema = z.object({
-  orderId: z.string().min(1),
-  action: z.enum(["COUNTER", "ACCEPT", "REJECT"]),
-  price: z.number().nonnegative().optional(),
-  note: z.string().max(1000).optional(),
-});
-
-export async function negotiationAction(input: z.infer<typeof negotiateSchema>): Promise<void> {
-  const session = await requireApproved();
-  const parsed = negotiateSchema.safeParse(input);
-  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
-  const d = parsed.data;
-
-  const { order } = await viewerContext(d.orderId, session);
-  if (!["PROPOSED", "COUNTERED"].includes(order.negotiationStatus)) {
-    throw new Error("لا يمكن التفاوض على هذا الطلب الآن");
-  }
-
-  const name = actorName(session);
-  const events = await prisma.negotiationEvent.findMany({
-    where: { orderId: order.id, action: { in: ["PROPOSE", "COUNTER"] } },
-    orderBy: { createdAt: "desc" },
-    take: 1,
-  });
-  const lastProposed = events[0]?.price ? Number(events[0].price) : null;
-
-  if (d.action === "COUNTER") {
-    if (d.price === undefined || d.price <= 0) throw new Error("أدخل السعر المضاد");
-    await prisma.$transaction(async (tx) => {
-      await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "COUNTER", price: d.price!, note: d.note || null } });
-      await tx.serviceOrder.update({ where: { id: order.id }, data: { negotiationStatus: "COUNTERED" } });
-    });
-  } else if (d.action === "ACCEPT") {
-    if (lastProposed === null) throw new Error("لا يوجد سعر لقبوله");
-    if (events[0]?.actorId === session.user.id) throw new Error("لا يمكنك قبول عرضك — بانتظار ردّ الطرف الآخر");
-    const tier = uniformTier(order.items);
-    const label = serviceLabelFor(order.items);
-    const requesterName =
-      order.requesterId === session.user.id
-        ? name
-        : (await prisma.user.findUnique({ where: { id: order.requesterId }, select: { fullName: true } }))?.fullName ?? name;
-    await prisma.$transaction(async (tx) => {
-      await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "ACCEPT", price: lastProposed, note: d.note || null } });
-      await tx.serviceOrder.update({ where: { id: order.id }, data: { negotiationStatus: "AGREED", agreedTotal: lastProposed, fulfillmentStatus: "NEW" } });
-      await createTransaction(
-        tx,
-        { orderNumber: order.orderNumber, serviceType: order.serviceType, serviceId: order.serviceId, requesterId: order.requesterId },
-        order.service.name,
-        requesterName,
-        label,
-        tier,
-        lastProposed,
-      );
-    });
-  } else {
-    await prisma.$transaction(async (tx) => {
-      await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "REJECT", note: d.note || null } });
-      await tx.serviceOrder.update({ where: { id: order.id }, data: { negotiationStatus: "CANCELLED", fulfillmentStatus: "CANCELLED", cancelledById: session.user.id, cancelReason: d.note || "رفض التفاوض" } });
-    });
-  }
-
-  await recordAudit({ actorId: session.user.id, action: `order.negotiation.${d.action}`, entityType: "ServiceOrder", entityId: order.id });
-
-  // Notify the counterparty: requester's move → members; member's move → requester.
-  if (order.requesterId === session.user.id) {
-    await notifyServiceMembers(order.serviceId, "order.negotiation", { no: order.orderNumber, action: d.action });
-  } else {
-    await dispatchNotification({ event: "order.negotiation", userId: order.requesterId, data: { no: order.orderNumber, action: d.action } });
-  }
-
-  const resource = SERVICE_TYPE_META[order.serviceType].resource;
-  revalidatePath(`/${resource}/orders/${order.id}`);
-  revalidatePath("/console");
 }
 
 // ─────────────────────── fulfilment ───────────────────────
@@ -283,7 +175,6 @@ export async function setFulfillmentStatus(orderId: string, status: string): Pro
   const session = await requireApproved();
   const { order, isMember } = await viewerContext(orderId, session);
   if (!isMember) throw new Error("تغيير حالة التنفيذ من اختصاص فريق الخدمة");
-  if (order.negotiationStatus !== "AGREED") throw new Error("لم يُتّفق على السعر بعد");
 
   const allowed = FULFILLMENT_TRANSITIONS[order.fulfillmentStatus] ?? [];
   if (!allowed.includes(status)) throw new Error("انتقال حالة غير مسموح");
@@ -355,22 +246,19 @@ export async function rateLabOrder(input: z.infer<typeof ratingSchema>): Promise
 export async function cancelOrder(orderId: string, reason?: string): Promise<void> {
   const session = await requireApproved();
   const { order } = await viewerContext(orderId, session);
-  if (["COMPLETED", "CANCELLED"].includes(order.fulfillmentStatus) || order.negotiationStatus === "CANCELLED") {
+  if (["COMPLETED", "CANCELLED"].includes(order.fulfillmentStatus)) {
     throw new Error("الطلب مُغلق بالفعل");
   }
-  const name = actorName(session);
 
   await prisma.$transaction(async (tx) => {
     await tx.serviceOrder.update({
       where: { id: order.id },
       data: {
-        negotiationStatus: order.negotiationStatus === "AGREED" ? order.negotiationStatus : "CANCELLED",
         fulfillmentStatus: "CANCELLED",
         cancelledById: session.user.id,
         cancelReason: reason || "أُلغي",
       },
     });
-    await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "CANCEL", note: reason || null } });
     await tx.partnerTransaction.updateMany({ where: { referenceId: order.orderNumber }, data: { status: "CANCELLED" } });
   });
 

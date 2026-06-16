@@ -27,13 +27,6 @@ export const CONDITION_META: Record<string, { label: string; tone: Tone }> = {
   REFURBISHED: { label: "مجدّد", tone: "info" },
 };
 
-export const NEGOTIATION_STATUS_META: Record<string, { label: string; tone: Tone }> = {
-  PROPOSED: { label: "عرض مقترح", tone: "warning" },
-  COUNTERED: { label: "عرض مضاد", tone: "info" },
-  AGREED: { label: "مُتّفق عليه", tone: "success" },
-  CANCELLED: { label: "ملغى", tone: "danger" },
-};
-
 export const FULFILLMENT_STATUS_META: Record<string, { label: string; tone: Tone }> = {
   NEW: { label: "جديد", tone: "info" },
   RECEIVED: { label: "استلمته الخدمة", tone: "info" },
@@ -53,18 +46,10 @@ export const FULFILLMENT_TRANSITIONS: Record<string, string[]> = {
 };
 
 export const TX_STATUS_META: Record<string, { label: string; tone: Tone }> = {
-  PENDING: { label: "قيد التفاوض", tone: "warning" },
+  PENDING: { label: "معلّق", tone: "warning" },
   AGREED: { label: "مُتّفق", tone: "info" },
   COMPLETED: { label: "مكتمل", tone: "success" },
   CANCELLED: { label: "ملغى", tone: "muted" },
-};
-
-export const NEGOTIATION_ACTION_LABEL: Record<string, string> = {
-  PROPOSE: "اقترح",
-  COUNTER: "عرض مضاد",
-  ACCEPT: "قبول",
-  REJECT: "رفض",
-  CANCEL: "إلغاء",
 };
 
 // ─────────────────────── maintenance ───────────────────────
