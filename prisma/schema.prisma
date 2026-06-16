@@ -1,0 +1,557 @@
+// VICTUS — منصة الخدمات (هوية مُعاد تعريفها)
+// منصة تجارية محورها ثلاث خدمات مملوكة للإدارة (المختبر + السوق + الصيانة).
+// مخطّط نظيف: الأساس (هوية/RBAC/جغرافيا/طبقات أفقية) + نواة الخدمات.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── ENUMS ─────────────────────────────
+
+enum AccountType {
+  SUPER_ADMIN
+  CLINIC_OWNER
+  DENTIST
+  SERVICE_MEMBER
+  JOB_SEEKER
+  ADVERTISER
+}
+
+enum AccountStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PermissionAction {
+  VIEW
+  CREATE
+  EDIT
+  DELETE
+  MANAGE
+  EXPORT
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  ACCOUNT
+  ORDER
+  MAINTENANCE
+  JOB
+  SYSTEM
+  GENERAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+}
+
+enum MediaKind {
+  IMAGE
+  DOCUMENT
+  PDF
+  CV
+  LOGO
+  AVATAR
+  VIDEO
+  OTHER
+}
+
+enum MediaStatus {
+  ACTIVE
+  DELETED
+}
+
+// نواة الخدمات
+enum ServiceType {
+  LAB
+  MARKET
+  MAINTENANCE
+}
+
+enum ServiceMode {
+  OFF
+  FEATURED
+  EXCLUSIVE
+}
+
+enum ServiceRole {
+  MANAGER
+  MEMBER
+}
+
+enum CatalogCondition {
+  NEW
+  USED
+  REFURBISHED
+}
+
+enum OrderTier {
+  NORMAL
+  VIP
+}
+
+enum NegotiationStatus {
+  PROPOSED
+  COUNTERED
+  AGREED
+  CANCELLED
+}
+
+enum FulfillmentStatus {
+  NEW
+  RECEIVED
+  IN_PROGRESS
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum NegotiationAction {
+  PROPOSE
+  COUNTER
+  ACCEPT
+  REJECT
+  CANCEL
+}
+
+enum TransactionStatus {
+  PENDING
+  AGREED
+  COMPLETED
+  CANCELLED
+}
+
+// ─────────────────────────── IDENTITY & RBAC ───────────────────────────
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  phone        String?       @unique
+  passwordHash String
+  fullName     String
+  accountType  AccountType
+  status       AccountStatus @default(PENDING)
+
+  governorateId String?
+  governorate   Governorate? @relation(fields: [governorateId], references: [id])
+
+  avatarUrl     String?
+  lastLoginAt   DateTime?
+  emailVerified DateTime?
+
+  reviewedById  String?
+  reviewedBy    User?     @relation("UserReviews", fields: [reviewedById], references: [id])
+  reviewedUsers User[]    @relation("UserReviews")
+  reviewedAt    DateTime?
+  reviewNote    String?
+
+  roles       UserRole[]
+  permissions UserPermission[]
+  documents   UserDocument[]
+
+  serviceMemberships ServiceMember[]
+  serviceOrders      ServiceOrder[]  @relation("OrderRequester")
+  ownedClinics       Clinic[]        @relation("ClinicOwner")
+
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+  auditLogs               AuditLog[]
+  activityEvents          ActivityEvent[]
+  mediaFiles              MediaFile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  isSystem    Boolean          @default(false)
+  users       UserRole[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+
+  @@map("roles")
+}
+
+model Permission {
+  id        String           @id @default(cuid())
+  resource  String
+  action    PermissionAction
+  roles     RolePermission[]
+  users     UserPermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// User-level overrides (grant/revoke above role).
+model UserPermission {
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  allow        Boolean    @default(true)
+
+  @@id([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model UserDocument {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  fileUrl   String
+  status    DocumentStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+
+  @@map("user_documents")
+}
+
+// ─────────────────────────── GEOGRAPHY ───────────────────────────
+
+model Governorate {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  nameAr    String
+  nameEn    String
+  districts District[]
+  users     User[]
+  clinics   Clinic[]
+  services  Service[]
+
+  @@map("governorates")
+}
+
+model District {
+  id            String      @id @default(cuid())
+  governorateId String
+  governorate   Governorate @relation(fields: [governorateId], references: [id], onDelete: Cascade)
+  nameAr        String
+  nameEn        String
+
+  @@map("districts")
+}
+
+// ─────────────────────────── HORIZONTAL LAYERS ───────────────────────────
+
+model Notification {
+  id      String              @id @default(cuid())
+  userId  String
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    NotificationType    @default(GENERAL)
+  event   String?
+  channel NotificationChannel @default(IN_APP)
+  title   String
+  body    String?
+  link    String?
+  readAt  DateTime?
+  createdAt DateTime          @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  userId String
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   NotificationType
+  inApp  Boolean          @default(true)
+  email  Boolean          @default(false)
+  sms    Boolean          @default(false)
+
+  @@id([userId, type])
+  @@map("notification_preferences")
+}
+
+model MediaFile {
+  id         String      @id @default(cuid())
+  ownerId    String
+  owner      User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  url        String
+  fileName   String
+  mimeType   String?
+  sizeBytes  Int         @default(0)
+  provider   String      @default("local")
+  kind       MediaKind   @default(OTHER)
+  status     MediaStatus @default(ACTIVE)
+  entityType String?
+  entityId   String?
+  createdAt  DateTime    @default(now())
+
+  @@index([entityType, entityId])
+  @@map("media_files")
+}
+
+model ActivityEvent {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  verb       String
+  summary    String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@map("activity_events")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key   String @id
+  group String @default("general")
+  label String
+  value Json
+
+  @@map("system_settings")
+}
+
+// ─────────────────────────── REQUESTER ENTITIES ───────────────────────────
+// Clinics & their devices are "service requesters" only (no clinical ERP).
+
+model Clinic {
+  id            String       @id @default(cuid())
+  ownerId       String
+  owner         User         @relation("ClinicOwner", fields: [ownerId], references: [id])
+  name          String
+  phone         String?
+  address       String?
+  governorateId String?
+  governorate   Governorate? @relation(fields: [governorateId], references: [id])
+  devices       Device[]
+  orders        ServiceOrder[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([ownerId])
+  @@map("clinics")
+}
+
+model Device {
+  id         String   @id @default(cuid())
+  clinicId   String
+  clinic     Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  name       String
+  brand      String?
+  model      String?
+  serial     String?
+  warrantyEnd DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([clinicId])
+  @@map("devices")
+}
+
+// ─────────────────────────── SERVICE CORE (admin-owned) ───────────────────────────
+
+model Service {
+  id            String          @id @default(cuid())
+  type          ServiceType     @unique // one canonical service per type (EXCLUSIVE)
+  name          String
+  about         String?
+  logoUrl       String?
+  phone         String?
+  governorateId String?
+  governorate   Governorate?    @relation(fields: [governorateId], references: [id])
+  mode          ServiceMode     @default(EXCLUSIVE)
+  isActive      Boolean         @default(true)
+  members       ServiceMember[]
+  catalogItems  CatalogItem[]
+  orders        ServiceOrder[]
+  priceChanges  PriceChangeLog[]
+  transactions  PartnerTransaction[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("services")
+}
+
+model ServiceMember {
+  id        String      @id @default(cuid())
+  serviceId String
+  service   Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ServiceRole @default(MEMBER)
+  title     String?
+  createdAt DateTime    @default(now())
+
+  @@unique([serviceId, userId])
+  @@index([userId])
+  @@map("service_members")
+}
+
+model CatalogItem {
+  id          String            @id @default(cuid())
+  serviceId   String
+  service     Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  imageUrl    String?
+  category    String?
+  condition   CatalogCondition? // for device listings in the market
+  priceNormal Decimal           @db.Decimal(14, 2)
+  priceVip    Decimal?          @db.Decimal(14, 2)
+  unit        String?
+  stock       Decimal?          @db.Decimal(14, 2)
+  isActive    Boolean           @default(true)
+  sortOrder   Int               @default(0)
+  orderItems  OrderItem[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([serviceId])
+  @@map("catalog_items")
+}
+
+model ServiceOrder {
+  id                String             @id @default(cuid())
+  orderNumber       String             @unique // ORD-#####
+  serviceId         String
+  service           Service            @relation(fields: [serviceId], references: [id])
+  serviceType       ServiceType
+  requesterId       String
+  requester         User               @relation("OrderRequester", fields: [requesterId], references: [id])
+  clinicId          String?
+  clinic            Clinic?            @relation(fields: [clinicId], references: [id])
+  negotiationStatus NegotiationStatus  @default(PROPOSED)
+  fulfillmentStatus FulfillmentStatus  @default(NEW)
+  agreedTotal       Decimal?           @db.Decimal(14, 2)
+  currency          String             @default("IQD")
+  note              String?
+  cancelledById     String?
+  cancelReason      String?
+  items             OrderItem[]
+  negotiationEvents NegotiationEvent[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([serviceId])
+  @@index([requesterId])
+  @@map("service_orders")
+}
+
+model OrderItem {
+  id            String       @id @default(cuid())
+  orderId       String
+  order         ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  catalogItemId String?
+  catalogItem   CatalogItem? @relation(fields: [catalogItemId], references: [id])
+  name          String
+  tier          OrderTier    @default(NORMAL)
+  quantity      Int          @default(1)
+  listedPrice   Decimal      @db.Decimal(14, 2)
+  proposedPrice Decimal?     @db.Decimal(14, 2)
+  agreedPrice   Decimal?     @db.Decimal(14, 2)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model NegotiationEvent {
+  id        String            @id @default(cuid())
+  orderId   String
+  order     ServiceOrder      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actorId   String
+  actorName String
+  action    NegotiationAction
+  price     Decimal?          @db.Decimal(14, 2)
+  note      String?
+  createdAt DateTime          @default(now())
+
+  @@index([orderId])
+  @@map("negotiation_events")
+}
+
+model PriceChangeLog {
+  id            String   @id @default(cuid())
+  catalogItemId String
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  actorId       String
+  actorName     String
+  field         String
+  oldValue      Decimal? @db.Decimal(14, 2)
+  newValue      Decimal? @db.Decimal(14, 2)
+  createdAt     DateTime @default(now())
+
+  @@index([serviceId])
+  @@map("price_change_logs")
+}
+
+// Admin documentation of every service deal (manual cut deduction reference).
+model PartnerTransaction {
+  id            String            @id @default(cuid())
+  type          ServiceType
+  serviceId     String
+  service       Service           @relation(fields: [serviceId], references: [id])
+  serviceName   String
+  requesterId   String
+  requesterName String
+  referenceId   String // ORD-#### or REQ-####
+  serviceLabel  String
+  tier          OrderTier?
+  agreedAmount  Decimal           @db.Decimal(14, 2)
+  status        TransactionStatus @default(AGREED)
+  createdAt     DateTime          @default(now())
+
+  @@index([type])
+  @@index([serviceId])
+  @@index([createdAt])
+  @@map("partner_transactions")
+}
