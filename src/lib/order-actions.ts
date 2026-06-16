@@ -1,0 +1,328 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import type { Prisma } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
+import { requireApproved, requirePermission, isPlatformAdmin } from "@/lib/guard";
+import { recordAudit, logActivity } from "@/lib/audit";
+import { dispatchNotification } from "@/lib/notifications";
+import { formatIQD } from "@/lib/format";
+import {
+  SERVICE_TYPE_META,
+  nextOrderNumber,
+  myServiceRole,
+  serviceLabelFor,
+  uniformTier,
+  FULFILLMENT_TRANSITIONS,
+  FULFILLMENT_STATUS_META,
+} from "@/lib/services";
+
+type Session = Awaited<ReturnType<typeof requireApproved>>;
+type ServiceType = "LAB" | "MARKET" | "MAINTENANCE";
+
+// ─────────────────────── shared helpers ───────────────────────
+
+async function viewerContext(orderId: string, session: Session) {
+  const order = await prisma.serviceOrder.findUnique({
+    where: { id: orderId },
+    include: { items: true, service: { select: { name: true } } },
+  });
+  if (!order) throw new Error("الطلب غير موجود");
+  const isRequester = order.requesterId === session.user.id;
+  const isAdmin = isPlatformAdmin(session);
+  const memberRole = isAdmin ? null : await myServiceRole(order.serviceId, session.user.id);
+  const isMember = isAdmin || Boolean(memberRole);
+  if (!isRequester && !isMember) throw new Error("لا تملك صلاحية على هذا الطلب");
+  return { order, isRequester, isMember, isAdmin };
+}
+
+function actorName(session: Session) {
+  return session.user.name ?? session.user.email ?? "مستخدم";
+}
+
+// Document the agreed deal for the admin (no commission math — amount only).
+async function createTransaction(
+  tx: Prisma.TransactionClient,
+  order: { orderNumber: string; serviceType: string; serviceId: string; requesterId: string },
+  serviceName: string,
+  requesterName: string,
+  serviceLabel: string,
+  tier: "NORMAL" | "VIP" | null,
+  amount: number,
+) {
+  await tx.partnerTransaction.create({
+    data: {
+      type: order.serviceType as never,
+      serviceId: order.serviceId,
+      serviceName,
+      requesterId: order.requesterId,
+      requesterName,
+      referenceId: order.orderNumber,
+      serviceLabel,
+      tier: tier as never,
+      agreedAmount: amount,
+      status: "AGREED",
+    },
+  });
+}
+
+async function notifyServiceMembers(
+  serviceId: string,
+  event: "order.received" | "order.negotiation" | "order.cancelled",
+  data: Record<string, string | number>,
+) {
+  const members = await prisma.serviceMember.findMany({
+    where: { serviceId },
+    select: { userId: true },
+  });
+  await Promise.all(members.map((m) => dispatchNotification({ event, userId: m.userId, data })));
+}
+
+// ─────────────────────── create order (cart → order) ───────────────────────
+
+const lineSchema = z.object({
+  catalogItemId: z.string().min(1),
+  tier: z.enum(["NORMAL", "VIP"]),
+  quantity: z.number().int().min(1).max(9999),
+});
+
+const createSchema = z.object({
+  serviceType: z.enum(["LAB", "MARKET", "MAINTENANCE"]),
+  mode: z.enum(["LISTED", "NEGOTIATE"]),
+  proposedTotal: z.number().nonnegative().optional(),
+  note: z.string().max(1000).optional(),
+  lines: z.array(lineSchema).min(1, "السلة فارغة"),
+});
+
+export async function createOrder(input: z.infer<typeof createSchema>): Promise<{ id: string }> {
+  const parsed = createSchema.safeParse(input);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  const d = parsed.data;
+
+  // Access: ordering is for requesters (clinics/doctors) — enforced server-side.
+  const resource = SERVICE_TYPE_META[d.serviceType].resource;
+  const session = await requirePermission(resource, "CREATE");
+
+  const service = await prisma.service.findUnique({ where: { type: d.serviceType } });
+  if (!service || !service.isActive || service.mode === "OFF") throw new Error("الخدمة غير متاحة");
+
+  const catalogItems = await prisma.catalogItem.findMany({
+    where: { id: { in: d.lines.map((l) => l.catalogItemId) }, serviceId: service.id, isActive: true },
+  });
+  const byId = new Map(catalogItems.map((c) => [c.id, c]));
+
+  const itemData = d.lines.map((l) => {
+    const ci = byId.get(l.catalogItemId);
+    if (!ci) throw new Error("أحد العناصر لم يعد متاحاً");
+    const vip = l.tier === "VIP" && ci.priceVip !== null;
+    const unit = Number(vip ? ci.priceVip : ci.priceNormal);
+    return { catalogItemId: ci.id, name: ci.name, tier: l.tier, quantity: l.quantity, listedPrice: unit };
+  });
+  const listedTotal = itemData.reduce((s, it) => s + it.listedPrice * it.quantity, 0);
+
+  if (d.mode === "NEGOTIATE" && (d.proposedTotal === undefined || d.proposedTotal <= 0)) {
+    throw new Error("أدخل السعر المقترح للتفاوض");
+  }
+
+  const orderNumber = await nextOrderNumber();
+  const name = actorName(session);
+  const tier = uniformTier(itemData);
+  const label = serviceLabelFor(itemData);
+
+  const created = await prisma.$transaction(async (tx) => {
+    const order = await tx.serviceOrder.create({
+      data: {
+        orderNumber,
+        serviceId: service.id,
+        serviceType: d.serviceType as never,
+        requesterId: session.user.id,
+        note: d.note || null,
+        negotiationStatus: d.mode === "LISTED" ? "AGREED" : "PROPOSED",
+        fulfillmentStatus: "NEW",
+        agreedTotal: d.mode === "LISTED" ? listedTotal : null,
+        items: {
+          create: itemData.map((it) => ({
+            catalogItemId: it.catalogItemId,
+            name: it.name,
+            tier: it.tier as never,
+            quantity: it.quantity,
+            listedPrice: it.listedPrice,
+            agreedPrice: d.mode === "LISTED" ? it.listedPrice : null,
+          })),
+        },
+      },
+    });
+
+    if (d.mode === "LISTED") {
+      await tx.negotiationEvent.create({
+        data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "ACCEPT", price: listedTotal, note: "قبول بالسعر المعروض" },
+      });
+      await createTransaction(tx, order, service.name, name, label, tier, listedTotal);
+    } else {
+      await tx.negotiationEvent.create({
+        data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "PROPOSE", price: d.proposedTotal!, note: d.note || null },
+      });
+    }
+    return order;
+  });
+
+  await recordAudit({ actorId: session.user.id, action: "order.created", entityType: "ServiceOrder", entityId: created.id, metadata: { mode: d.mode, orderNumber } });
+  await logActivity({ actorId: session.user.id, verb: "order.created", summary: `أنشأ طلباً ${orderNumber} لدى ${service.name}`, entityType: "ServiceOrder", entityId: created.id });
+  await notifyServiceMembers(service.id, "order.received", {
+    no: orderNumber,
+    amount: formatIQD(d.mode === "LISTED" ? listedTotal : d.proposedTotal!),
+  });
+
+  revalidatePath(`/${resource}/orders`);
+  revalidatePath("/console");
+  return { id: created.id };
+}
+
+// ─────────────────────── negotiation ───────────────────────
+
+const negotiateSchema = z.object({
+  orderId: z.string().min(1),
+  action: z.enum(["COUNTER", "ACCEPT", "REJECT"]),
+  price: z.number().nonnegative().optional(),
+  note: z.string().max(1000).optional(),
+});
+
+export async function negotiationAction(input: z.infer<typeof negotiateSchema>): Promise<void> {
+  const session = await requireApproved();
+  const parsed = negotiateSchema.safeParse(input);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  const d = parsed.data;
+
+  const { order } = await viewerContext(d.orderId, session);
+  if (!["PROPOSED", "COUNTERED"].includes(order.negotiationStatus)) {
+    throw new Error("لا يمكن التفاوض على هذا الطلب الآن");
+  }
+
+  const name = actorName(session);
+  const events = await prisma.negotiationEvent.findMany({
+    where: { orderId: order.id, action: { in: ["PROPOSE", "COUNTER"] } },
+    orderBy: { createdAt: "desc" },
+    take: 1,
+  });
+  const lastProposed = events[0]?.price ? Number(events[0].price) : null;
+
+  if (d.action === "COUNTER") {
+    if (d.price === undefined || d.price <= 0) throw new Error("أدخل السعر المضاد");
+    await prisma.$transaction(async (tx) => {
+      await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "COUNTER", price: d.price!, note: d.note || null } });
+      await tx.serviceOrder.update({ where: { id: order.id }, data: { negotiationStatus: "COUNTERED" } });
+    });
+  } else if (d.action === "ACCEPT") {
+    if (lastProposed === null) throw new Error("لا يوجد سعر لقبوله");
+    if (events[0]?.actorId === session.user.id) throw new Error("لا يمكنك قبول عرضك — بانتظار ردّ الطرف الآخر");
+    const tier = uniformTier(order.items);
+    const label = serviceLabelFor(order.items);
+    const requesterName =
+      order.requesterId === session.user.id
+        ? name
+        : (await prisma.user.findUnique({ where: { id: order.requesterId }, select: { fullName: true } }))?.fullName ?? name;
+    await prisma.$transaction(async (tx) => {
+      await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "ACCEPT", price: lastProposed, note: d.note || null } });
+      await tx.serviceOrder.update({ where: { id: order.id }, data: { negotiationStatus: "AGREED", agreedTotal: lastProposed, fulfillmentStatus: "NEW" } });
+      await createTransaction(
+        tx,
+        { orderNumber: order.orderNumber, serviceType: order.serviceType, serviceId: order.serviceId, requesterId: order.requesterId },
+        order.service.name,
+        requesterName,
+        label,
+        tier,
+        lastProposed,
+      );
+    });
+  } else {
+    await prisma.$transaction(async (tx) => {
+      await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "REJECT", note: d.note || null } });
+      await tx.serviceOrder.update({ where: { id: order.id }, data: { negotiationStatus: "CANCELLED", fulfillmentStatus: "CANCELLED", cancelledById: session.user.id, cancelReason: d.note || "رفض التفاوض" } });
+    });
+  }
+
+  await recordAudit({ actorId: session.user.id, action: `order.negotiation.${d.action}`, entityType: "ServiceOrder", entityId: order.id });
+
+  // Notify the counterparty: requester's move → members; member's move → requester.
+  if (order.requesterId === session.user.id) {
+    await notifyServiceMembers(order.serviceId, "order.negotiation", { no: order.orderNumber, action: d.action });
+  } else {
+    await dispatchNotification({ event: "order.negotiation", userId: order.requesterId, data: { no: order.orderNumber, action: d.action } });
+  }
+
+  const resource = SERVICE_TYPE_META[order.serviceType].resource;
+  revalidatePath(`/${resource}/orders/${order.id}`);
+  revalidatePath("/console");
+}
+
+// ─────────────────────── fulfilment ───────────────────────
+
+export async function setFulfillmentStatus(orderId: string, status: string): Promise<void> {
+  const session = await requireApproved();
+  const { order, isMember } = await viewerContext(orderId, session);
+  if (!isMember) throw new Error("تغيير حالة التنفيذ من اختصاص فريق الخدمة");
+  if (order.negotiationStatus !== "AGREED") throw new Error("لم يُتّفق على السعر بعد");
+
+  const allowed = FULFILLMENT_TRANSITIONS[order.fulfillmentStatus] ?? [];
+  if (!allowed.includes(status)) throw new Error("انتقال حالة غير مسموح");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.update({ where: { id: order.id }, data: { fulfillmentStatus: status as never } });
+    if (status === "COMPLETED" || status === "CANCELLED") {
+      await tx.partnerTransaction.updateMany({
+        where: { referenceId: order.orderNumber },
+        data: { status: status === "COMPLETED" ? "COMPLETED" : "CANCELLED" },
+      });
+    }
+    if (status === "CANCELLED") {
+      await tx.serviceOrder.update({ where: { id: order.id }, data: { cancelledById: session.user.id } });
+    }
+  });
+
+  await recordAudit({ actorId: session.user.id, action: "order.fulfillment", entityType: "ServiceOrder", entityId: order.id, metadata: { status } });
+  await logActivity({ actorId: session.user.id, verb: "order.fulfillment", summary: `طلب ${order.orderNumber}: ${FULFILLMENT_STATUS_META[status]?.label ?? status}`, entityType: "ServiceOrder", entityId: order.id });
+  await dispatchNotification({ event: "order.statusChanged", userId: order.requesterId, data: { no: order.orderNumber, status: FULFILLMENT_STATUS_META[status]?.label ?? status } });
+
+  const resource = SERVICE_TYPE_META[order.serviceType].resource;
+  revalidatePath(`/${resource}/orders/${order.id}`);
+  revalidatePath("/console");
+}
+
+// ─────────────────────── cancel (requester / member / admin) ───────────────────────
+
+export async function cancelOrder(orderId: string, reason?: string): Promise<void> {
+  const session = await requireApproved();
+  const { order } = await viewerContext(orderId, session);
+  if (["COMPLETED", "CANCELLED"].includes(order.fulfillmentStatus) || order.negotiationStatus === "CANCELLED") {
+    throw new Error("الطلب مُغلق بالفعل");
+  }
+  const name = actorName(session);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.serviceOrder.update({
+      where: { id: order.id },
+      data: {
+        negotiationStatus: order.negotiationStatus === "AGREED" ? order.negotiationStatus : "CANCELLED",
+        fulfillmentStatus: "CANCELLED",
+        cancelledById: session.user.id,
+        cancelReason: reason || "أُلغي",
+      },
+    });
+    await tx.negotiationEvent.create({ data: { orderId: order.id, actorId: session.user.id, actorName: name, action: "CANCEL", note: reason || null } });
+    await tx.partnerTransaction.updateMany({ where: { referenceId: order.orderNumber }, data: { status: "CANCELLED" } });
+  });
+
+  await recordAudit({ actorId: session.user.id, action: "order.cancelled", entityType: "ServiceOrder", entityId: order.id, metadata: { reason } });
+  await logActivity({ actorId: session.user.id, verb: "order.cancelled", summary: `ألغى الطلب ${order.orderNumber}`, entityType: "ServiceOrder", entityId: order.id });
+
+  if (order.requesterId !== session.user.id) {
+    await dispatchNotification({ event: "order.cancelled", userId: order.requesterId, data: { no: order.orderNumber } });
+  } else {
+    await notifyServiceMembers(order.serviceId, "order.cancelled", { no: order.orderNumber });
+  }
+
+  const resource = SERVICE_TYPE_META[order.serviceType].resource;
+  revalidatePath(`/${resource}/orders/${order.id}`);
+  revalidatePath("/console");
+}

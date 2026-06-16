@@ -131,8 +131,34 @@ async function seedServices(adminId: string) {
       update: { role: "MANAGER" },
       create: { serviceId: svc.id, userId: adminId, role: "MANAGER", title: "مدير الخدمة" },
     });
+
+    // Seed the lab catalog with a real price list (normal / VIP).
+    if (s.type === "LAB") {
+      const lab = [
+        { name: "Full Zirconia", priceNormal: 35000, priceVip: 50000, unit: "سن" },
+        { name: "Full Zirconia Implant", priceNormal: 45000, priceVip: 65000, unit: "سن" },
+        { name: "Zirconia Layering", priceNormal: 50000, priceVip: 65000, unit: "سن" },
+        { name: "Overlay Lithium Disilicate", priceNormal: 65000, priceVip: 75000, unit: "سن" },
+        { name: "Veneer Lithium Disilicate", priceNormal: 65000, priceVip: 75000, unit: "سن" },
+        { name: "Porcelain fused to metal", priceNormal: 30000, priceVip: 40000, unit: "سن" },
+        { name: "PFM Implant", priceNormal: 50000, priceVip: 60000, unit: "سن" },
+        { name: "Hybrid composite", priceNormal: 40000, priceVip: 50000, unit: "سن" },
+        { name: "Surgical Guide", priceNormal: 150000, priceVip: null, unit: "قطعة" },
+        { name: "Night Guard / Retainer", priceNormal: 25000, priceVip: null, unit: "قطعة" },
+        { name: "Clear Aligner", priceNormal: 100000, priceVip: null, unit: "حالة" },
+      ];
+      for (let i = 0; i < lab.length; i++) {
+        const it = lab[i];
+        const exists = await prisma.catalogItem.findFirst({ where: { serviceId: svc.id, name: it.name } });
+        if (!exists) {
+          await prisma.catalogItem.create({
+            data: { serviceId: svc.id, name: it.name, priceNormal: it.priceNormal, priceVip: it.priceVip, unit: it.unit, sortOrder: i },
+          });
+        }
+      }
+    }
   }
-  console.log(`✓ Services: ${services.length}`);
+  console.log(`✓ Services: ${services.length} (+lab catalog)`);
 }
 
 async function main() {

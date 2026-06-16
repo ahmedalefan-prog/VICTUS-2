@@ -1,9 +1,62 @@
+import Link from "next/link";
 import { requirePermission } from "@/lib/guard";
-import { ModulePlaceholder } from "@/components/ui/placeholder";
+import { prisma } from "@/lib/prisma";
+import { getService, canRequest } from "@/lib/services";
+import { PageHeader } from "@/components/layout/dashboard-shell";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CatalogShop } from "@/components/services/catalog-shop";
 
-export const metadata = { title: "خدمة المختبر" };
+export const metadata = { title: "المختبر" };
 
-export default async function Page() {
-  await requirePermission("lab", "VIEW");
-  return <ModulePlaceholder title="خدمة المختبر" description="كتالوج أسعار المختبر (عادي/VIP) — تصفّح للجميع، طلب للأطباء والعيادات" phase="المرحلة 2" />;
+export default async function LabPage() {
+  const session = await requirePermission("lab", "VIEW");
+  const service = await getService("LAB");
+
+  if (!service || !service.isActive || service.mode === "OFF") {
+    return (
+      <>
+        <PageHeader title="خدمة المختبر" />
+        <Card className="py-16 text-center text-fg-muted">خدمة المختبر غير مُفعّلة حالياً.</Card>
+      </>
+    );
+  }
+
+  const items = await prisma.catalogItem.findMany({
+    where: { serviceId: service.id, isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+  });
+  const canOrder = canRequest(session, "LAB");
+
+  return (
+    <>
+      <PageHeader title={service.name} description={service.about ?? "كتالوج خدمات المختبر"}>
+        <div className="flex items-center gap-2">
+          <Badge tone="primary">خدمة رسمية</Badge>
+          {canOrder && (
+            <Link href="/lab/orders" className="text-sm font-medium text-primary hover:underline">
+              طلباتي ←
+            </Link>
+          )}
+        </div>
+      </PageHeader>
+
+      <CatalogShop
+        serviceType="LAB"
+        canOrder={canOrder}
+        items={items.map((it) => ({
+          id: it.id,
+          name: it.name,
+          description: it.description ?? "",
+          imageUrl: it.imageUrl ?? "",
+          category: it.category ?? "",
+          condition: it.condition ?? null,
+          priceNormal: Number(it.priceNormal),
+          priceVip: it.priceVip === null ? null : Number(it.priceVip),
+          unit: it.unit ?? "",
+          stock: it.stock === null ? null : Number(it.stock),
+        }))}
+      />
+    </>
+  );
 }
