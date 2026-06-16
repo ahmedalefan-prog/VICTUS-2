@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { createOrder } from "@/lib/order-actions";
 import { formatIQD } from "@/lib/format";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Field } from "@/components/ui/input";
 import { Odontogram, ALL_FDI } from "@/components/services/odontogram";
@@ -39,7 +38,6 @@ let uid = 0;
 
 export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
   const router = useRouter();
-  const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const [lines, setLines] = useState<Line[]>([]);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [caseFiles, setCaseFiles] = useState<string[]>([]);
@@ -64,12 +62,7 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   }
 
-  // assignments: fdi -> colour (for the chart); ownerOf: fdi -> line key
-  const ownerOf = useMemo(() => {
-    const m: Record<number, string> = {};
-    for (const l of lines) for (const t of l.teeth) m[t] = l.key;
-    return m;
-  }, [lines]);
+  // assignments: fdi -> colour (for the chart)
   const assignments = useMemo(() => {
     const m: Record<number, string> = {};
     for (const l of lines) { const c = colorOf(l.key); for (const t of l.teeth) m[t] = c; }

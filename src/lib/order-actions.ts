@@ -19,7 +19,6 @@ import {
 } from "@/lib/services";
 
 type Session = Awaited<ReturnType<typeof requireApproved>>;
-type ServiceType = "LAB" | "MARKET" | "MAINTENANCE";
 
 // ─────────────────────── shared helpers ───────────────────────
 

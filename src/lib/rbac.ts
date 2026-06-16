@@ -140,9 +140,12 @@ const BASELINE_PERMS: RoleTemplate = {
   notifications: ["VIEW"],
   activity: ["VIEW"],
   media: ["VIEW", "CREATE"],
-  // service catalogs are browsable by everyone (ordering gated by CREATE)
+  // service catalogs are browsable by everyone (ordering gated by CREATE);
+  // maintenance has no public catalog — VIEW only opens the page (queue is
+  // gated to team/admin server-side, requesters see their own requests).
   lab: ["VIEW"],
   market: ["VIEW"],
+  maintenance: ["VIEW"],
   // jobs board + candidate profile open to all
   jobs: ["VIEW"],
   candidate: ["VIEW", "CREATE", "EDIT"],

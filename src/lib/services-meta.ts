@@ -67,6 +67,29 @@ export const NEGOTIATION_ACTION_LABEL: Record<string, string> = {
   CANCEL: "إلغاء",
 };
 
+// ─────────────────────── maintenance ───────────────────────
+
+export const MAINTENANCE_PRIORITY_META: Record<string, { label: string; tone: Tone }> = {
+  LOW: { label: "منخفضة", tone: "muted" },
+  MEDIUM: { label: "متوسطة", tone: "info" },
+  HIGH: { label: "عالية", tone: "warning" },
+  URGENT: { label: "طارئة", tone: "danger" },
+};
+
+export const MAINTENANCE_PRIORITIES = Object.keys(MAINTENANCE_PRIORITY_META);
+
+export const MAINTENANCE_STATUS_META: Record<string, { label: string; tone: Tone }> = {
+  NEW: { label: "جديد", tone: "info" },
+  ASSIGNED: { label: "تم الإسناد", tone: "primary" },
+  IN_PROGRESS: { label: "قيد التنفيذ", tone: "warning" },
+  AWAITING_CLOSURE: { label: "بانتظار الإغلاق", tone: "warning" },
+  COMPLETED: { label: "مكتمل", tone: "success" },
+  CANCELLED: { label: "ملغى", tone: "danger" },
+};
+
+// An open request is anything not yet completed or cancelled.
+export const MAINTENANCE_OPEN_STATUSES = ["NEW", "ASSIGNED", "IN_PROGRESS", "AWAITING_CLOSURE"];
+
 export function serviceLabelFor(items: { name: string }[]): string {
   if (items.length === 0) return "طلب";
   return items.length === 1 ? items[0].name : `${items[0].name} (+${items.length - 1})`;

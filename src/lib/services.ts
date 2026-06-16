@@ -22,6 +22,26 @@ export async function nextOrderNumber(): Promise<string> {
   return `ORD-${String(count + 1).padStart(5, "0")}`;
 }
 
+export async function nextRequestNumber(): Promise<string> {
+  const count = await prisma.maintenanceRequest.count();
+  return `REQ-${String(count + 1).padStart(5, "0")}`;
+}
+
+// The maintenance team: members of the MAINTENANCE service (engineers to assign).
+export async function getMaintenanceTeam() {
+  const service = await getService("MAINTENANCE");
+  if (!service) return { service: null, members: [] as { id: string; name: string; role: string }[] };
+  const members = await prisma.serviceMember.findMany({
+    where: { serviceId: service.id },
+    include: { user: { select: { id: true, fullName: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  return {
+    service,
+    members: members.map((m) => ({ id: m.user.id, name: m.user.fullName, role: m.role })),
+  };
+}
+
 // ─────────────────────── guards ───────────────────────
 
 type SessionLike = { user: { id: string; permissions: string[] } };

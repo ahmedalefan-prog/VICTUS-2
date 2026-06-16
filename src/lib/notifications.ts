@@ -62,8 +62,8 @@ export const NOTIFICATION_EVENTS = {
   "maintenance.requested": {
     type: "MAINTENANCE",
     title: "طلب صيانة جديد",
-    body: (d) => `طلب صيانة ${d.no}`,
-    link: "/maintenance/console",
+    body: (d) => `طلب صيانة ${d.no} (${d.device})`,
+    link: "/maintenance",
   },
   "maintenance.assigned": {
     type: "MAINTENANCE",
@@ -74,6 +74,21 @@ export const NOTIFICATION_EVENTS = {
     type: "MAINTENANCE",
     title: "تحديث على طلب الصيانة",
     body: (d) => `طلب ${d.no} أصبح: ${d.status}`,
+  },
+  "maintenance.reportReady": {
+    type: "MAINTENANCE",
+    title: "تقرير الصيانة جاهز",
+    body: (d) => `طلب ${d.no} — التكلفة ${d.amount}. يُرجى الاطّلاع والإقرار.`,
+  },
+  "maintenance.acknowledged": {
+    type: "MAINTENANCE",
+    title: "أقرّ العميل بالتكلفة",
+    body: (d) => `طلب ${d.no} — جاهز للإنهاء`,
+  },
+  "maintenance.completed": {
+    type: "MAINTENANCE",
+    title: "اكتمل طلب الصيانة",
+    body: (d) => `طلب ${d.no} — التكلفة النهائية ${d.amount}`,
   },
   // ─── jobs ───
   "job.applicationReceived": {

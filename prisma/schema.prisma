@@ -136,6 +136,23 @@ enum TransactionStatus {
   CANCELLED
 }
 
+// ─── maintenance service (internal, no public catalog) ───
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceStatus {
+  NEW // REQ- submitted by the doctor
+  ASSIGNED // team received + assigned an engineer
+  IN_PROGRESS // engineer started (visits + parts)
+  AWAITING_CLOSURE // report written (diagnosis + totalCost), awaiting doctor acknowledgement
+  COMPLETED // finalised → PartnerTransaction documented
+  CANCELLED // reachable from any open state
+}
+
 // ─────────────────────────── IDENTITY & RBAC ───────────────────────────
 
 model User {
@@ -168,6 +185,10 @@ model User {
   serviceOrders      ServiceOrder[]  @relation("OrderRequester")
   ownedClinics       Clinic[]        @relation("ClinicOwner")
   labRatings         LabRating[]     @relation("LabRatingRater")
+
+  maintenanceRequests MaintenanceRequest[] @relation("MaintenanceRequester")
+  assignedMaintenance MaintenanceRequest[] @relation("MaintenanceEngineer")
+  maintenanceVisits   MaintenanceVisit[]   @relation("MaintenanceVisitEngineer")
 
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
@@ -376,6 +397,7 @@ model Clinic {
   governorate   Governorate? @relation(fields: [governorateId], references: [id])
   devices       Device[]
   orders        ServiceOrder[]
+  maintenanceRequests MaintenanceRequest[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -392,6 +414,7 @@ model Device {
   model      String?
   serial     String?
   warrantyEnd DateTime?
+  maintenanceRequests MaintenanceRequest[]
   createdAt  DateTime @default(now())
 
   @@index([clinicId])
@@ -417,6 +440,7 @@ model Service {
   priceChanges  PriceChangeLog[]
   transactions  PartnerTransaction[]
   ratings       LabRating[]
+  maintenanceRequests MaintenanceRequest[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -455,6 +479,7 @@ model CatalogItem {
   isActive      Boolean         @default(true)
   sortOrder     Int             @default(0)
   orderItems  OrderItem[]
+  maintenanceParts MaintenancePart[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -581,4 +606,101 @@ model LabRating {
 
   @@index([serviceId])
   @@map("lab_ratings")
+}
+
+// ─────────────────────────── MAINTENANCE SERVICE ───────────────────────────
+// Internal service (no public catalog). The doctor requests directly from
+// /maintenance; the team assigns an engineer, logs visits + parts, writes a
+// costed report, the doctor acknowledges (transparency only), then completion
+// documents one PartnerTransaction at totalCost.
+
+model MaintenanceRequest {
+  id            String              @id @default(cuid())
+  requestNumber String              @unique // REQ-#####
+  serviceId     String
+  service       Service             @relation(fields: [serviceId], references: [id])
+  requesterId   String
+  requester     User                @relation("MaintenanceRequester", fields: [requesterId], references: [id])
+  clinicId      String?
+  clinic        Clinic?             @relation(fields: [clinicId], references: [id])
+  deviceId      String?
+  device        Device?             @relation(fields: [deviceId], references: [id])
+  deviceName    String // الجهاز المعطّل (snapshot / free text)
+  description   String // وصف العطل
+  priority      MaintenancePriority @default(MEDIUM)
+  status        MaintenanceStatus   @default(NEW)
+  mediaUrls     String[] // external image/video links (optional)
+
+  assignedEngineerId String?
+  assignedEngineer   User?   @relation("MaintenanceEngineer", fields: [assignedEngineerId], references: [id])
+
+  acknowledgedAt DateTime? // doctor acknowledged the cost (transparency gate)
+  completedAt    DateTime?
+  cancelledById  String?
+  cancelReason   String?
+
+  report MaintenanceReport?
+  visits MaintenanceVisit[]
+  parts  MaintenancePart[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([serviceId])
+  @@index([requesterId])
+  @@index([status])
+  @@index([assignedEngineerId])
+  @@map("maintenance_requests")
+}
+
+// One report per request (written on closure). totalCost = laborCost + partsCost.
+model MaintenanceReport {
+  id         String             @id @default(cuid())
+  requestId  String             @unique
+  request    MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  diagnosis  String // التشخيص + الإجراءات
+  laborCost  Decimal            @default(0) @db.Decimal(14, 2) // الأجور IQD
+  partsCost  Decimal            @default(0) @db.Decimal(14, 2) // قطع الغيار IQD (derived)
+  totalCost  Decimal            @default(0) @db.Decimal(14, 2) // الإجمالي IQD
+  authorId   String?
+  authorName String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@map("maintenance_reports")
+}
+
+// A site visit logged by the assigned engineer.
+model MaintenanceVisit {
+  id           String             @id @default(cuid())
+  requestId    String
+  request      MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  engineerId   String
+  engineer     User               @relation("MaintenanceVisitEngineer", fields: [engineerId], references: [id])
+  engineerName String
+  visitDate    DateTime
+  notes        String?
+  createdAt    DateTime           @default(now())
+
+  @@index([requestId])
+  @@map("maintenance_visits")
+}
+
+// A spare part used in a request. Registration only — links a market catalog
+// item to compute its cost into totalCost; it does NOT touch market stock and
+// creates NO separate market transaction (avoids double-documentation).
+model MaintenancePart {
+  id            String             @id @default(cuid())
+  requestId     String
+  request       MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  catalogItemId String?
+  catalogItem   CatalogItem?       @relation(fields: [catalogItemId], references: [id])
+  name          String
+  quantity      Int                @default(1)
+  unitPrice     Decimal            @db.Decimal(14, 2) // IQD snapshot
+  lineTotal     Decimal            @db.Decimal(14, 2) // IQD
+  createdAt     DateTime           @default(now())
+
+  @@index([requestId])
+  @@map("maintenance_parts")
 }
