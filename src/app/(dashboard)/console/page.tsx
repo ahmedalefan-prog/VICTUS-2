@@ -52,6 +52,8 @@ export default async function ConsolePage() {
       <PageHeader title={`كونسول ${service.name}`} description="إدارة الطلبات الواردة وكتالوج الأسعار.">
         <div className="flex items-center gap-2">
           <Badge tone="info">{SERVICE_TYPE_META[service.type].label}</Badge>
+          <Link href="/console/team" className="text-sm font-medium text-primary hover:underline">الفريق</Link>
+          <span className="text-fg-faint">·</span>
           <Link href="/console/reports" className="text-sm font-medium text-primary hover:underline">التقارير ←</Link>
         </div>
       </PageHeader>

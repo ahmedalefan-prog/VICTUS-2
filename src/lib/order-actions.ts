@@ -85,13 +85,17 @@ const lineSchema = z.object({
   catalogItemId: z.string().min(1),
   tier: z.enum(["NORMAL", "VIP"]),
   quantity: z.number().int().min(1).max(9999),
+  teeth: z.array(z.number().int().min(11).max(48)).optional(),
+  shade: z.string().max(20).optional(),
+  itemNotes: z.string().max(1000).optional(),
 });
 
 const createSchema = z.object({
   serviceType: z.enum(["LAB", "MARKET", "MAINTENANCE"]),
   mode: z.enum(["LISTED", "NEGOTIATE"]),
   proposedTotal: z.number().nonnegative().optional(),
-  note: z.string().max(1000).optional(),
+  note: z.string().max(2000).optional(),
+  caseFiles: z.array(z.string().url()).max(20).optional(),
   lines: z.array(lineSchema).min(1, "السلة فارغة"),
 });
 
@@ -117,7 +121,10 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
     if (!ci) throw new Error("أحد العناصر لم يعد متاحاً");
     const vip = l.tier === "VIP" && ci.priceVip !== null;
     const unit = Number(vip ? ci.priceVip : ci.priceNormal);
-    return { catalogItemId: ci.id, name: ci.name, tier: l.tier, quantity: l.quantity, listedPrice: unit };
+    // Lab manufacturing: units = number of selected teeth (when provided).
+    const teeth = l.teeth ?? [];
+    const quantity = teeth.length > 0 ? teeth.length : l.quantity;
+    return { catalogItemId: ci.id, name: ci.name, tier: l.tier, quantity, listedPrice: unit, teeth, shade: l.shade || null, itemNotes: l.itemNotes || null };
   });
   const listedTotal = itemData.reduce((s, it) => s + it.listedPrice * it.quantity, 0);
 
@@ -138,6 +145,7 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
         serviceType: d.serviceType as never,
         requesterId: session.user.id,
         note: d.note || null,
+        caseFiles: d.caseFiles ?? [],
         negotiationStatus: d.mode === "LISTED" ? "AGREED" : "PROPOSED",
         fulfillmentStatus: "NEW",
         agreedTotal: d.mode === "LISTED" ? listedTotal : null,
@@ -147,6 +155,9 @@ export async function createOrder(input: z.infer<typeof createSchema>): Promise<
             name: it.name,
             tier: it.tier as never,
             quantity: it.quantity,
+            teeth: it.teeth,
+            shade: it.shade,
+            itemNotes: it.itemNotes,
             listedPrice: it.listedPrice,
             agreedPrice: d.mode === "LISTED" ? it.listedPrice : null,
           })),
@@ -287,6 +298,46 @@ export async function setFulfillmentStatus(orderId: string, status: string): Pro
   const resource = SERVICE_TYPE_META[order.serviceType].resource;
   revalidatePath(`/${resource}/orders/${order.id}`);
   revalidatePath("/console");
+}
+
+// ─────────────────────── lab rating (doctor rates a completed order) ───────────────────────
+
+const ratingSchema = z.object({
+  orderId: z.string().min(1),
+  quality: z.number().int().min(1).max(5),
+  speed: z.number().int().min(1).max(5),
+  commitment: z.number().int().min(1).max(5),
+  comment: z.string().max(1000).optional(),
+});
+
+export async function rateLabOrder(input: z.infer<typeof ratingSchema>): Promise<void> {
+  const session = await requireApproved();
+  const parsed = ratingSchema.safeParse(input);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  const d = parsed.data;
+
+  const order = await prisma.serviceOrder.findUnique({
+    where: { id: d.orderId },
+    select: { requesterId: true, serviceId: true, serviceType: true, fulfillmentStatus: true, rating: { select: { id: true } } },
+  });
+  if (!order) throw new Error("الطلب غير موجود");
+  if (order.requesterId !== session.user.id) throw new Error("التقييم من حقّ صاحب الطلب فقط");
+  if (order.fulfillmentStatus !== "COMPLETED") throw new Error("يمكن التقييم بعد اكتمال الطلب");
+  if (order.rating) throw new Error("سبق تقييم هذا الطلب");
+
+  await prisma.labRating.create({
+    data: {
+      orderId: d.orderId,
+      serviceId: order.serviceId,
+      raterId: session.user.id,
+      quality: d.quality,
+      speed: d.speed,
+      commitment: d.commitment,
+      comment: d.comment || null,
+    },
+  });
+  await logActivity({ actorId: session.user.id, verb: "lab.rated", summary: "قيّم طلب مختبر", entityType: "ServiceOrder", entityId: d.orderId });
+  revalidatePath(`/lab/orders/${d.orderId}`);
 }
 
 // ─────────────────────── cancel (requester / member / admin) ───────────────────────

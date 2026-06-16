@@ -14,8 +14,9 @@ import { formatIQD, formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, FileText } from "lucide-react";
 import { OrderControls, NegotiationThread } from "@/components/services/order-controls";
+import { OrderOdontogram, RatingForm, RatingDisplay } from "@/components/services/lab-order-extras";
 
 export const metadata = { title: "تفاصيل الطلب" };
 
@@ -30,6 +31,7 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
       service: { select: { name: true } },
       requester: { select: { fullName: true, email: true } },
       negotiationEvents: { orderBy: { createdAt: "asc" } },
+      rating: true,
     },
   });
   if (!order) notFound();
@@ -73,30 +75,26 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <Card>
-            <h3 className="mb-3 font-semibold text-fg">العناصر</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-fg-muted">
-                  <tr className="border-b border-border-soft text-right">
-                    <th className="pb-2 font-medium">العنصر</th>
-                    <th className="pb-2 font-medium">المستوى</th>
-                    <th className="pb-2 font-medium">الكمية</th>
-                    <th className="pb-2 font-medium">السعر</th>
-                    <th className="pb-2 font-medium">المجموع</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((it) => (
-                    <tr key={it.id} className="border-b border-border-soft/50">
-                      <td className="py-2 text-fg">{it.name}</td>
-                      <td className="py-2"><Badge tone={ORDER_TIER_META[it.tier]?.tone ?? "muted"}>{ORDER_TIER_META[it.tier]?.label}</Badge></td>
-                      <td className="py-2 text-fg">{it.quantity}</td>
-                      <td className="py-2 text-fg-muted">{formatIQD(Number(it.listedPrice))}</td>
-                      <td className="py-2 text-fg">{formatIQD(Number(it.listedPrice) * it.quantity)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <h3 className="mb-3 font-semibold text-fg">بنود الطلب التصنيعي</h3>
+            <div className="space-y-2">
+              {order.items.map((it) => (
+                <div key={it.id} className="rounded-lg border border-border-soft bg-surface-2/40 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-fg">{it.name}</span>
+                      <Badge tone={ORDER_TIER_META[it.tier]?.tone ?? "muted"}>{ORDER_TIER_META[it.tier]?.label}</Badge>
+                      {it.shade && <Badge tone="info">اللون: {it.shade}</Badge>}
+                    </div>
+                    <span className="text-sm font-medium text-fg">{it.quantity} وحدة · {formatIQD(Number(it.listedPrice) * it.quantity)}</span>
+                  </div>
+                  {it.teeth.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {it.teeth.map((t) => <span key={t} className="rounded bg-surface-3 px-1.5 py-0.5 text-[11px] tabular-nums text-fg-muted">{t}</span>)}
+                    </div>
+                  )}
+                  {it.itemNotes && <p className="mt-1.5 text-xs text-fg-muted">ملاحظة: {it.itemNotes}</p>}
+                </div>
+              ))}
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-border-soft pt-3 text-sm">
               <span className="text-fg-muted">الإجمالي المعروض</span>
@@ -108,9 +106,31 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
                 <span className="font-bold text-primary">{formatIQD(Number(order.agreedTotal))}</span>
               </div>
             )}
-            {order.note && <p className="mt-3 text-xs text-fg-muted">ملاحظة: {order.note}</p>}
+            {order.note && <p className="mt-3 text-xs text-fg-muted">ملاحظة عامة: {order.note}</p>}
             {order.cancelReason && <p className="mt-2 text-xs text-danger">سبب الإلغاء: {order.cancelReason}</p>}
           </Card>
+
+          {order.items.some((it) => it.teeth.length > 0) && (
+            <Card>
+              <h3 className="mb-3 font-semibold text-fg">مخطّط الأسنان</h3>
+              <OrderOdontogram items={order.items.map((it) => ({ name: it.name, teeth: it.teeth }))} />
+            </Card>
+          )}
+
+          {order.caseFiles.length > 0 && (
+            <Card>
+              <h3 className="mb-3 font-semibold text-fg">ملفات الحالة</h3>
+              <ul className="space-y-2">
+                {order.caseFiles.map((f, i) => (
+                  <li key={i}>
+                    <a href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" dir="ltr">
+                      <FileText className="h-4 w-4" /> {f}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           {order.negotiationEvents.length > 0 && (
             <Card>
@@ -149,6 +169,12 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
             allowedTransitions={allowedTransitions}
             fulfillmentLabels={Object.fromEntries(allowedTransitions.map((s) => [s, FULFILLMENT_STATUS_META[s]?.label ?? s]))}
           />
+
+          {order.rating ? (
+            <RatingDisplay quality={order.rating.quality} speed={order.rating.speed} commitment={order.rating.commitment} comment={order.rating.comment} />
+          ) : (
+            isRequester && order.fulfillmentStatus === "COMPLETED" && <RatingForm orderId={order.id} />
+          )}
         </div>
       </div>
     </>

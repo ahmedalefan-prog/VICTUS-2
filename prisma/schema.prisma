@@ -167,6 +167,7 @@ model User {
   serviceMemberships ServiceMember[]
   serviceOrders      ServiceOrder[]  @relation("OrderRequester")
   ownedClinics       Clinic[]        @relation("ClinicOwner")
+  labRatings         LabRating[]     @relation("LabRatingRater")
 
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
@@ -415,6 +416,7 @@ model Service {
   orders        ServiceOrder[]
   priceChanges  PriceChangeLog[]
   transactions  PartnerTransaction[]
+  ratings       LabRating[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -473,11 +475,13 @@ model ServiceOrder {
   fulfillmentStatus FulfillmentStatus  @default(NEW)
   agreedTotal       Decimal?           @db.Decimal(14, 2)
   currency          String             @default("IQD")
-  note              String?
+  note              String? // general case notes
+  caseFiles         String[] // external URLs (STL / DICOM / images) — direct upload deferred
   cancelledById     String?
   cancelReason      String?
   items             OrderItem[]
   negotiationEvents NegotiationEvent[]
+  rating            LabRating?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -495,6 +499,9 @@ model OrderItem {
   name          String
   tier          OrderTier    @default(NORMAL)
   quantity      Int          @default(1)
+  teeth         Int[] // FDI tooth numbers (lab manufacturing orders)
+  shade         String? // VITA shade e.g. A2
+  itemNotes     String?
   listedPrice   Decimal      @db.Decimal(14, 2)
   proposedPrice Decimal?     @db.Decimal(14, 2)
   agreedPrice   Decimal?     @db.Decimal(14, 2)
@@ -554,4 +561,23 @@ model PartnerTransaction {
   @@index([serviceId])
   @@index([createdAt])
   @@map("partner_transactions")
+}
+
+// Doctor's rating of a completed lab order (quality / speed / commitment 1–5).
+model LabRating {
+  id         String       @id @default(cuid())
+  orderId    String       @unique
+  order      ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceId  String
+  service    Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  raterId    String
+  rater      User         @relation("LabRatingRater", fields: [raterId], references: [id])
+  quality    Int
+  speed      Int
+  commitment Int
+  comment    String?
+  createdAt  DateTime     @default(now())
+
+  @@index([serviceId])
+  @@map("lab_ratings")
 }

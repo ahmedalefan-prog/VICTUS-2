@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CatalogShop } from "@/components/services/catalog-shop";
+import { LabOrderBuilder } from "@/components/services/lab-order-builder";
 
 export const metadata = { title: "المختبر" };
 
@@ -41,22 +42,35 @@ export default async function LabPage() {
         </div>
       </PageHeader>
 
-      <CatalogShop
-        serviceType="LAB"
-        canOrder={canOrder}
-        items={items.map((it) => ({
-          id: it.id,
-          name: it.name,
-          description: it.description ?? "",
-          imageUrl: it.imageUrl ?? "",
-          category: it.category ?? "",
-          condition: it.condition ?? null,
-          priceNormal: Number(it.priceNormal),
-          priceVip: it.priceVip === null ? null : Number(it.priceVip),
-          unit: it.unit ?? "",
-          stock: it.stock === null ? null : Number(it.stock),
-        }))}
-      />
+      {canOrder ? (
+        <LabOrderBuilder
+          items={items.map((it) => ({
+            id: it.id,
+            name: it.name,
+            description: it.description ?? "",
+            imageUrl: it.imageUrl ?? "",
+            priceNormal: Number(it.priceNormal),
+            priceVip: it.priceVip === null ? null : Number(it.priceVip),
+          }))}
+        />
+      ) : (
+        <CatalogShop
+          serviceType="LAB"
+          canOrder={false}
+          items={items.map((it) => ({
+            id: it.id,
+            name: it.name,
+            description: it.description ?? "",
+            imageUrl: it.imageUrl ?? "",
+            category: it.category ?? "",
+            condition: it.condition ?? null,
+            priceNormal: Number(it.priceNormal),
+            priceVip: it.priceVip === null ? null : Number(it.priceVip),
+            unit: it.unit ?? "",
+            stock: it.stock === null ? null : Number(it.stock),
+          }))}
+        />
+      )}
     </>
   );
 }
