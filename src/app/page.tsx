@@ -2,23 +2,22 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
-  Activity,
-  FlaskConical,
-  Store,
-  Wrench,
-  Briefcase,
-  Megaphone,
-  ShieldCheck,
-  ArrowLeft,
+  Activity, FlaskConical, Store, Wrench, Briefcase,
+  Stethoscope, Building2, UserRound, Megaphone,
+  ShieldCheck, ArrowLeft, MapPin, Phone, Mail, BadgeCheck,
 } from "lucide-react";
 
-const SECTORS = [
-  { icon: FlaskConical, title: "خدمة المختبر", desc: "كتالوج أسعار (عادي/VIP)، سلة طلب، وتفاوض موثّق على السعر." },
-  { icon: Store, title: "خدمة السوق", desc: "قطع غيار وأجهزة (جديد/مستعمل/مجدّد) من كتالوج موثوق." },
-  { icon: Wrench, title: "خدمة الصيانة", desc: "طلب صيانة للأجهزة مع فريق رسمي وتقرير بتكلفة شفّافة." },
-  { icon: Briefcase, title: "الوظائف والتوظيف", desc: "ربط الباحثين عن عمل بفرص القطاع — تصفّح وتقديم للجميع." },
-  { icon: Megaphone, title: "نظام إعلانات", desc: "حملات مستهدفة مع تقارير المشاهدات والنقرات." },
-  { icon: ShieldCheck, title: "موثوقية وتوثيق", desc: "كل طلب يُوثَّق تلقائياً — شفافية كاملة للإدارة." },
+const SERVICES = [
+  { icon: FlaskConical, title: "المختبر", desc: "تركيبات سنية باحترافية من فريق المختبر الرسمي." },
+  { icon: Store, title: "السوق", desc: "قطع غيار وأجهزة لعيادتك من كتالوج موثوق." },
+  { icon: Wrench, title: "الصيانة", desc: "صيانة أجهزة العيادة مع فريق رسمي وتقرير شفّاف." },
+];
+
+const AUDIENCE = [
+  { icon: Stethoscope, title: "أطباء الأسنان", desc: "اطلب الخدمات وتابع طلباتك في مكان واحد." },
+  { icon: Building2, title: "العيادات", desc: "أدِر عيادتك وأجهزتها وطلبات صيانتها." },
+  { icon: UserRound, title: "الباحثون عن عمل", desc: "تصفّح فرص القطاع وقدّم بسهولة." },
+  { icon: Megaphone, title: "المعلنون", desc: "روّج لمنتجاتك وخدماتك للجمهور المستهدف." },
 ];
 
 export default async function Home() {
@@ -26,6 +25,7 @@ export default async function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* header */}
       <header className="sticky top-0 z-20 border-b border-border-soft bg-bg/70 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
@@ -36,64 +36,124 @@ export default async function Home() {
           </div>
           <div className="flex items-center gap-2">
             {session?.user ? (
-              <Link href="/dashboard">
-                <Button size="sm">لوحة التحكم</Button>
-              </Link>
+              <Link href="/dashboard"><Button size="sm">لوحة التحكم</Button></Link>
             ) : (
               <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">دخول</Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm">إنشاء حساب</Button>
-                </Link>
+                <Link href="/login"><Button variant="ghost" size="sm">دخول</Button></Link>
+                <Link href="/register"><Button size="sm">إنشاء حساب</Button></Link>
               </>
             )}
           </div>
         </div>
       </header>
 
+      {/* hero */}
       <section className="mx-auto w-full max-w-6xl px-4 py-20 text-center">
         <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2/60 px-4 py-1.5 text-xs text-fg-muted">
-          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-          منصة وطنية رقمية · العراق · IQD
+          <ShieldCheck className="h-3.5 w-3.5 text-primary" /> منصة وطنية رقمية · العراق · IQD
         </span>
         <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-fg sm:text-5xl">
-          <span className="text-primary">VICTUS</span> — منصّة خدمات طب الأسنان في العراق
+          كل ما يحتاجه <span className="text-primary">طبيب الأسنان</span> في مكان واحد
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-fg-muted">
-          ثلاث خدمات أساسية في مكان واحد — المختبر، السوق، والصيانة — تخدم العيادات والأطباء،
-          مع طبقتي توظيف وإعلانات. بواجهة عربية بالكامل وتصميم احترافي.
+          المختبر · السوق · الصيانة — إضافةً إلى الوظائف والإعلانات. منصّة عربية متكاملة لقطاع طب الأسنان في العراق.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">
-          <Link href="/register">
-            <Button size="lg" className="gap-2">
-              ابدأ الآن
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="outline" size="lg">تسجيل الدخول</Button>
-          </Link>
+          <Link href="/register"><Button size="lg" className="gap-2">ابدأ الآن <ArrowLeft className="h-4 w-4" /></Button></Link>
+          <Link href="/login"><Button variant="outline" size="lg">تسجيل الدخول</Button></Link>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-24">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SECTORS.map((s) => (
-            <div key={s.title} className="card glass rounded-[var(--radius)] p-6">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
-                <s.icon className="h-5 w-5" />
+      {/* three services */}
+      <section className="mx-auto w-full max-w-6xl px-4 pb-4">
+        <h2 className="mb-6 text-center text-2xl font-bold text-fg">خدماتنا الثلاث</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {SERVICES.map((s) => (
+            <div key={s.title} className="card glass flex flex-col rounded-[var(--radius)] p-6">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-soft text-primary">
+                <s.icon className="h-6 w-6" />
               </span>
-              <h3 className="mt-4 font-semibold text-fg">{s.title}</h3>
-              <p className="mt-1.5 text-sm text-fg-muted">{s.desc}</p>
+              <h3 className="mt-4 text-lg font-semibold text-fg">{s.title}</h3>
+              <p className="mt-1.5 flex-1 text-sm text-fg-muted">{s.desc}</p>
+              <Link href="/register" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                اعرف المزيد <ArrowLeft className="h-3.5 w-3.5" />
+              </Link>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="mt-auto border-t border-border-soft py-6 text-center text-xs text-fg-faint">
-        © {new Date().getFullYear()} VICTUS — جميع الحقوق محفوظة · منصة قطاع طب الأسنان في العراق
+      {/* audience */}
+      <section className="mx-auto w-full max-w-6xl px-4 py-16">
+        <h2 className="mb-6 text-center text-2xl font-bold text-fg">لمن المنصة؟</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {AUDIENCE.map((a) => (
+            <div key={a.title} className="rounded-[var(--radius)] border border-border-soft bg-surface-2/40 p-5 text-center">
+              <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary-soft text-primary">
+                <a.icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-3 font-semibold text-fg">{a.title}</h3>
+              <p className="mt-1 text-xs text-fg-muted">{a.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* jobs */}
+      <section className="mx-auto w-full max-w-6xl px-4 pb-16">
+        <div className="card glass flex flex-col items-center gap-4 rounded-[var(--radius)] p-8 text-center sm:flex-row sm:justify-between sm:text-right">
+          <div className="flex items-center gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+              <Briefcase className="h-6 w-6" />
+            </span>
+            <div>
+              <h3 className="text-lg font-semibold text-fg">وظائف قطاع طب الأسنان</h3>
+              <p className="mt-1 text-sm text-fg-muted">فرص عمل من العيادات والمختبرات — تصفّح وتقديم متاح للجميع.</p>
+            </div>
+          </div>
+          <Link href="/register"><Button className="gap-2">تصفّح الوظائف <ArrowLeft className="h-4 w-4" /></Button></Link>
+        </div>
+      </section>
+
+      {/* trust bar */}
+      <section className="border-y border-border-soft bg-surface-2/30 py-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-2 px-4 text-center">
+          <span className="text-xs text-fg-faint">الشريك الرسمي</span>
+          <div className="flex items-center gap-2 text-fg">
+            <BadgeCheck className="h-5 w-5 text-primary" />
+            <span className="text-lg font-bold">PROF Dental Lab</span>
+          </div>
+          <p className="text-xs text-fg-muted">مختبر الأسنان الرسمي المعتمد على منصّة VICTUS.</p>
+        </div>
+      </section>
+
+      {/* footer */}
+      <footer className="mt-auto border-t border-border-soft py-10">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 sm:grid-cols-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-[#04211f]"><Activity className="h-4 w-4" strokeWidth={2.5} /></span>
+              <span className="font-bold text-fg">VICTUS</span>
+            </div>
+            <p className="mt-2 text-xs text-fg-muted">منصّة خدمات طب الأسنان في العراق.</p>
+          </div>
+          <div className="text-sm">
+            <h4 className="mb-2 font-semibold text-fg">روابط</h4>
+            <ul className="space-y-1 text-fg-muted">
+              <li><Link href="/register" className="hover:text-primary">إنشاء حساب</Link></li>
+              <li><Link href="/login" className="hover:text-primary">تسجيل الدخول</Link></li>
+            </ul>
+          </div>
+          <div className="text-sm">
+            <h4 className="mb-2 font-semibold text-fg">تواصل</h4>
+            <ul className="space-y-1.5 text-fg-muted">
+              <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> العراق</li>
+              <li className="flex items-center gap-2" dir="ltr"><Mail className="h-4 w-4 text-primary" /> support@victus.iq</li>
+              <li className="flex items-center gap-2" dir="ltr"><Phone className="h-4 w-4 text-primary" /> +964</li>
+            </ul>
+          </div>
+        </div>
+        <p className="mt-8 text-center text-xs text-fg-faint">© {new Date().getFullYear()} VICTUS — جميع الحقوق محفوظة</p>
       </footer>
     </div>
   );
