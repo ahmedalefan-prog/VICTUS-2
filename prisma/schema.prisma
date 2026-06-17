@@ -472,6 +472,22 @@ model SystemSetting {
   @@map("system_settings")
 }
 
+// Brands directory — browsable by everyone, managed by admins.
+model Brand {
+  id        String   @id @default(cuid())
+  name      String
+  category  String?
+  about     String?
+  website   String?
+  country   String?
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("brands")
+}
+
 // ─────────────────────────── REQUESTER ENTITIES ───────────────────────────
 // Clinics & their devices are "service requesters" only (no clinical ERP).
 
