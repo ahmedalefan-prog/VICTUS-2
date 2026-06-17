@@ -8,8 +8,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled (PgBouncer) endpoint for app runtime — stable under serverless load.
+  url       = env("DATABASE_URL")
+  // Direct endpoint for migrations / `prisma db push` (DDL needs a direct conn).
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // ───────────────────────────── ENUMS ─────────────────────────────

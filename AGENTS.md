@@ -26,7 +26,7 @@ SUPER_ADMIN · CLINIC_OWNER · DENTIST · SERVICE_MEMBER · JOB_SEEKER · ADVERT
 المدير الافتراضي: admin@victus.iq / Victus@2026.
 
 ## أوامر
-`npm run dev` · `db:push` · `db:seed` · `db:studio` · `build`. يتطلب `DATABASE_URL` في `.env` (**قاعدة منفصلة عن VICTUS-1**).
+`npm run dev` · `db:push` · `db:seed` · `db:studio` · `build`. يتطلب في `.env` (**قاعدة منفصلة عن VICTUS-1**): `DATABASE_URL` (نقطة Neon **المجمّعة** `-pooler` + `pgbouncer=true` — للتشغيل) و `DIRECT_DATABASE_URL` (المباشرة — للهجرات/`db push`). على Vercel اضبط كليهما + `AUTH_SECRET`.
 لا middleware — الحماية في تخطيطات الخادم. عميل Prisma في `src/generated/prisma` (متجاهَل).
 
 ## حالة البناء
