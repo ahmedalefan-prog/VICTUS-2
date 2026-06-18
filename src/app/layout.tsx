@@ -44,6 +44,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
+      <head>
+        {/* Apply the saved theme before paint to avoid a flash (default: dark). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("victus-theme");if(t==="light"){document.documentElement.dataset.theme="light";}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />

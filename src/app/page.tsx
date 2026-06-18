@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import {
   Activity, FlaskConical, Store, Wrench, Briefcase,
   Stethoscope, Building2, UserRound, Megaphone,
@@ -35,6 +36,7 @@ export default async function Home() {
             <span className="text-lg font-bold text-fg">VICTUS</span>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {session?.user ? (
               <Link href="/dashboard"><Button size="sm">لوحة التحكم</Button></Link>
             ) : (

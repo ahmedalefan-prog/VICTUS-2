@@ -35,6 +35,38 @@
 
   --ring: rgba(22, 196, 184, 0.45);
   --radius: 0.9rem;
+
+  color-scheme: dark;
+}
+
+/* ── Light theme: "Soft Mint" (teal-cohesive) ── */
+html[data-theme="light"] {
+  --bg: #eef5f3;
+  --bg-soft: #e7f0ed;
+  --surface: #ffffff;
+  --surface-2: #f4faf8;
+  --surface-3: #e6f1ee;
+  --border: #d6e6e1;
+  --border-soft: #e3efeb;
+
+  --fg: #0f2a27;
+  --fg-muted: #4f6b66;
+  --fg-faint: #8aa39d;
+
+  --primary: #0d9488;
+  --primary-strong: #0f766e;
+  --primary-soft: rgba(13, 148, 136, 0.1);
+  --accent: #0ea5e9;
+  --accent-soft: rgba(14, 165, 233, 0.1);
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0284c7;
+
+  --ring: rgba(13, 148, 136, 0.4);
+
+  color-scheme: light;
 }
 
 @theme inline {
@@ -69,10 +101,6 @@
   border-color: var(--border);
 }
 
-html {
-  color-scheme: dark;
-}
-
 body {
   background:
     radial-gradient(1200px 600px at 100% -10%, rgba(22, 196, 184, 0.08), transparent 60%),
@@ -81,6 +109,14 @@ body {
   color: var(--fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Light theme: softer mint/sky glows on the light surface */
+html[data-theme="light"] body {
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(13, 148, 136, 0.07), transparent 60%),
+    radial-gradient(1000px 500px at -10% 10%, rgba(14, 165, 233, 0.06), transparent 55%),
+    var(--bg);
 }
 
 /* Glassmorphism panel */
@@ -93,6 +129,12 @@ body {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Light theme: frosted white glass with a subtle teal edge */
+html[data-theme="light"] .glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+  border: 1px solid rgba(13, 148, 136, 0.12);
 }
 
 .card {

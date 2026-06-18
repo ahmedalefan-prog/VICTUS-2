@@ -9,6 +9,7 @@ import { can } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 interface ShellUser {
   id: string;
@@ -173,6 +174,8 @@ export function DashboardShell({
           </button>
 
           <div className="flex-1" />
+
+          <ThemeToggle />
 
           <Link
             href="/notifications"
