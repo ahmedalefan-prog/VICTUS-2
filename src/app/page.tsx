@@ -30,7 +30,7 @@ export default async function Home() {
       <header className="sticky top-0 z-20 border-b border-border-soft bg-bg/70 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-[#04211f]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-[var(--primary-fg)]">
               <Activity className="h-5 w-5" strokeWidth={2.5} />
             </span>
             <span className="text-lg font-bold text-fg">VICTUS</span>
@@ -134,7 +134,7 @@ export default async function Home() {
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 sm:grid-cols-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-[#04211f]"><Activity className="h-4 w-4" strokeWidth={2.5} /></span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-[var(--primary-fg)]"><Activity className="h-4 w-4" strokeWidth={2.5} /></span>
               <span className="font-bold text-fg">VICTUS</span>
             </div>
             <p className="mt-2 text-xs text-fg-muted">منصّة خدمات طب الأسنان في العراق.</p>

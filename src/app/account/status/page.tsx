@@ -44,7 +44,7 @@ export default async function AccountStatusPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <Link href="/" className="mb-8 flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-[#04211f]">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-[var(--primary-fg)]">
           <Activity className="h-6 w-6" strokeWidth={2.5} />
         </span>
         <span className="text-2xl font-bold text-fg">VICTUS</span>

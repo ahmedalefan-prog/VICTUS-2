@@ -24,6 +24,7 @@
   --primary: #16c4b8;
   --primary-strong: #0fa89d;
   --primary-soft: rgba(22, 196, 184, 0.12);
+  --primary-fg: #04211f; /* text/icon color on a primary background */
   --accent: #3b82f6;
   --accent-soft: rgba(59, 130, 246, 0.12);
 
@@ -53,11 +54,13 @@ html[data-theme="light"] {
   --fg-muted: #4f6b66;
   --fg-faint: #8aa39d;
 
-  --primary: #0d9488;
-  --primary-strong: #0f766e;
-  --primary-soft: rgba(13, 148, 136, 0.1);
-  --accent: #0ea5e9;
-  --accent-soft: rgba(14, 165, 233, 0.1);
+  /* deeper teal so white button text clears AA contrast on white surfaces */
+  --primary: #0f766e;
+  --primary-strong: #115e56;
+  --primary-soft: rgba(15, 118, 110, 0.1);
+  --primary-fg: #ffffff;
+  --accent: #0284c7;
+  --accent-soft: rgba(2, 132, 199, 0.1);
 
   --success: #16a34a;
   --warning: #d97706;

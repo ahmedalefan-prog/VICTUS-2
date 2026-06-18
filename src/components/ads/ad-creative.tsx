@@ -68,11 +68,11 @@ export function AdCreative({ data, clickHref }: { data: AdCreativeData; clickHre
         </div>
         {ctaLabel &&
           (clickHref ? (
-            <a href={clickHref} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[#04211f] transition-opacity hover:opacity-90">
+            <a href={clickHref} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[var(--primary-fg)] transition-opacity hover:opacity-90">
               <CtaIcon className="h-3.5 w-3.5" /> {ctaLabel}
             </a>
           ) : (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[#04211f]">
+            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[var(--primary-fg)]">
               <CtaIcon className="h-3.5 w-3.5" /> {ctaLabel}
             </span>
           ))}

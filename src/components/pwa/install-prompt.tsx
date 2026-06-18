@@ -64,7 +64,7 @@ export function InstallPrompt() {
   return (
     <div className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-xl border border-border-soft bg-bg-soft/95 p-3 shadow-lg backdrop-blur-md lg:bottom-5 print:hidden">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-[#04211f]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-[var(--primary-fg)]">
           <Download className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
@@ -84,7 +84,7 @@ export function InstallPrompt() {
       {!state.isIOS && (
         <button
           onClick={install}
-          className="mt-2.5 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-[#04211f] transition-opacity hover:opacity-90"
+          className="mt-2.5 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-[var(--primary-fg)] transition-opacity hover:opacity-90"
         >
           تثبيت الآن
         </button>

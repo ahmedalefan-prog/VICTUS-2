@@ -75,7 +75,7 @@ export function DashboardShell({
       >
         <div className="mb-6 flex items-center justify-between px-2">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-[#04211f]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-[var(--primary-fg)]">
               <Activity className="h-5 w-5" strokeWidth={2.5} />
             </span>
             <span className="text-lg font-bold text-fg">VICTUS</span>
