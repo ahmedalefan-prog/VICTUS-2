@@ -7,6 +7,7 @@ import { formatIQD, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Handshake, ChevronLeft } from "lucide-react";
 import { CatalogManager } from "@/components/services/catalog-manager";
 
@@ -64,7 +65,7 @@ export default async function ConsolePage() {
           {activeOrders > 0 && <Badge tone="warning">{activeOrders} نشط</Badge>}
         </div>
         {orders.length === 0 ? (
-          <p className="py-6 text-center text-sm text-fg-muted">لا توجد طلبات واردة بعد.</p>
+          <EmptyState title="لا توجد طلبات واردة بعد." />
         ) : (
           <ul className="space-y-2">
             {orders.map((o) => (

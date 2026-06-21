@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ChevronRight } from "lucide-react";
 import { EmployeeEditForm, AttendanceControls, LeaveControls } from "@/components/hr/employee-controls";
 
@@ -45,7 +46,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
           <Card>
             <h3 className="mb-3 font-semibold text-fg">سجلّ الحضور الأخير</h3>
             {emp.attendance.length === 0 ? (
-              <p className="py-4 text-center text-sm text-fg-muted">لا يوجد سجل حضور.</p>
+              <EmptyState title="لا يوجد سجل حضور." />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

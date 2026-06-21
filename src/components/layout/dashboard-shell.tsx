@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Bell, Menu, X, LogOut, ChevronLeft, ChevronDown, LayoutDashboard, MoreHorizontal } from "lucide-react";
+import { Activity, Bell, Menu, X, LogOut, ChevronLeft, ChevronDown, LayoutDashboard, MoreHorizontal, Search } from "lucide-react";
 import { NAV_GROUPS, DASHBOARD_NAV, MOBILE_NAV_PRIORITY } from "@/lib/nav";
 import { can } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { CommandPalette } from "@/components/ui/command";
+import { Tooltip } from "@/components/ui/tooltip";
+import { useHotkey } from "@/hooks/use-hotkey";
 
 interface ShellUser {
   id: string;
@@ -32,8 +35,13 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
   const pathname = usePathname();
   const permSet = new Set(permissions);
+
+  useHotkey({ key: "k", modifiers: ["meta"] }, () => setCmdOpen(true));
+  useHotkey({ key: "k", modifiers: ["ctrl"] }, () => setCmdOpen(true));
+  useHotkey({ key: "/", modifiers: ["ctrl"] }, () => setCmdOpen(true));
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -56,6 +64,28 @@ export function DashboardShell({
   const dashboardAllowed = can(permSet, DASHBOARD_NAV.resource, DASHBOARD_NAV.action);
   const mobileItems = MOBILE_NAV_PRIORITY.filter((it) => can(permSet, it.resource, it.action)).slice(0, 2);
 
+  const commandItems = useMemo(() => {
+    const items: { id: string; label: string; description?: string; href: string; icon?: React.ReactNode; keywords?: string[] }[] = [];
+    if (dashboardAllowed) {
+      items.push({ id: "dashboard", label: DASHBOARD_NAV.label, href: DASHBOARD_NAV.href, icon: <LayoutDashboard className="h-4 w-4" />, keywords: ["الرئيسية", "home"] });
+    }
+    for (const g of groups) {
+      for (const it of g.items) {
+        const Icon = it.icon;
+        items.push({
+          id: it.href,
+          label: it.label,
+          description: g.title,
+          href: it.href,
+          icon: <Icon className="h-4 w-4" />,
+          keywords: [g.title],
+        });
+      }
+    }
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permissions]);
+
   return (
     <div className="flex min-h-screen">
       {/* overlay (mobile) */}
@@ -69,8 +99,8 @@ export function DashboardShell({
       {/* sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-40 w-72 shrink-0 overflow-y-auto border-l border-border-soft bg-bg-soft/95 px-3 py-5 transition-transform lg:static lg:translate-x-0 print:hidden",
-          open ? "translate-x-0" : "translate-x-full lg:translate-x-0",
+          "fixed inset-y-0 right-0 z-40 w-72 shrink-0 overflow-y-auto border-l border-border-soft bg-bg-soft/80 px-3 py-5 backdrop-blur-xl transition-transform duration-300 print:hidden",
+          open ? "translate-x-0" : "translate-x-full",
         )}
       >
         <div className="mb-6 flex items-center justify-between px-2">
@@ -80,7 +110,7 @@ export function DashboardShell({
             </span>
             <span className="text-lg font-bold text-fg">VICTUS</span>
           </Link>
-          <button className="lg:hidden text-fg-muted" onClick={() => setOpen(false)}>
+          <button className="lg:hidden text-fg-muted" onClick={() => setOpen(false)} aria-label="إغلاق القائمة الجانبية">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -91,8 +121,9 @@ export function DashboardShell({
             <Link
               href={DASHBOARD_NAV.href}
               onClick={() => setOpen(false)}
+              aria-current={isActive(DASHBOARD_NAV.href) ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "nav-glow flex items-center gap-3 rounded-lg px-3 py-2.5 pr-4 text-sm font-medium transition-colors",
                 isActive(DASHBOARD_NAV.href)
                   ? "bg-primary-soft text-primary"
                   : "text-fg-muted hover:bg-surface-2 hover:text-fg",
@@ -115,7 +146,7 @@ export function DashboardShell({
                   onClick={() => toggleGroup(group.key)}
                   aria-expanded={expanded}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
+                    "nav-glow flex w-full items-center gap-3 rounded-lg px-3 py-2.5 pr-4 text-sm font-semibold transition-colors",
                     hasActive && !expanded
                       ? "text-primary"
                       : "text-fg-muted hover:bg-surface-2 hover:text-fg",
@@ -140,8 +171,9 @@ export function DashboardShell({
                           <Link
                             href={item.href}
                             onClick={() => setOpen(false)}
+                            aria-current={active ? "page" : undefined}
                             className={cn(
-                              "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                              "nav-glow group flex items-center gap-3 rounded-lg px-3 py-2 pr-4 text-sm font-medium transition-colors",
                               active
                                 ? "bg-primary-soft text-primary"
                                 : "text-fg-muted hover:bg-surface-2 hover:text-fg",
@@ -167,18 +199,31 @@ export function DashboardShell({
       </aside>
 
       {/* main column */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className={cn("flex min-w-0 flex-1 flex-col transition-[margin] duration-300", open && "lg:mr-72")}>
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border-soft bg-bg/80 px-4 backdrop-blur-md lg:px-6 print:hidden">
-          <button className="lg:hidden text-fg" onClick={() => setOpen(true)}>
-            <Menu className="h-6 w-6" />
+          <button className="text-fg" onClick={() => setOpen((p) => !p)} aria-label={open ? "إغلاق القائمة الجانبية" : "فتح القائمة الجانبية"}>
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
 
           <div className="flex-1" />
+
+          <Tooltip content="⌘K للبحث السريع">
+            <button
+              type="button"
+              onClick={() => setCmdOpen(true)}
+              className="ml-2 flex h-9 items-center gap-2 rounded-lg border border-border-soft bg-surface-2/60 px-3 text-xs text-fg-faint transition-all duration-200 hover:border-primary/40 hover:text-fg-muted hover:shadow-[0_0_20px_-8px_var(--primary)] max-lg:hidden active:scale-95"
+            >
+              <Search className="h-4 w-4" />
+              <span>بحث سريع...</span>
+              <kbd className="mr-4 rounded border border-border-soft bg-surface-3 px-1.5 py-0.5 text-[10px] text-fg-faint">⌘K</kbd>
+            </button>
+          </Tooltip>
 
           <ThemeToggle />
 
           <Link
             href="/notifications"
+            aria-label={`الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروء)` : ""}`}
             className="relative flex h-10 w-10 items-center justify-center rounded-lg text-fg-muted hover:bg-surface-2 hover:text-fg"
           >
             <Bell className="h-5 w-5" />
@@ -215,7 +260,7 @@ export function DashboardShell({
       </div>
 
       {/* شريط التنقّل السفلي (جوال فقط) */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-border-soft bg-bg/95 backdrop-blur-md lg:hidden print:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-border-soft bg-bg/70 backdrop-blur-xl lg:hidden print:hidden">
         {dashboardAllowed && (
           <BottomNavLink
             href={DASHBOARD_NAV.href}
@@ -246,6 +291,7 @@ export function DashboardShell({
         <button
           type="button"
           onClick={() => setOpen(true)}
+          aria-label="المزيد من القائمة"
           className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium text-fg-muted"
         >
           <MoreHorizontal className="h-5 w-5" />
@@ -254,6 +300,7 @@ export function DashboardShell({
       </nav>
 
       <InstallPrompt />
+      <CommandPalette items={commandItems} open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </div>
   );
 }
@@ -307,7 +354,7 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-fg">{title}</h1>
+        <h1 className="text-gradient text-2xl font-bold tracking-tight">{title}</h1>
         {description && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
       </div>
       {children}

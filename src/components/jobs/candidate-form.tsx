@@ -49,13 +49,13 @@ export function CandidateForm({
         <Field label="العنوان المهني" hint="مثال: طبيب أسنان عام — 5 سنوات خبرة">
           <Input name="headline" defaultValue={profile?.headline ?? ""} />
         </Field>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="سنوات الخبرة">
-            <Input name="experienceYears" type="number" min="0" max="70" dir="ltr" defaultValue={profile?.experienceYears ?? 0} />
+            <Input name="experienceYears" type="number" min="0" defaultValue={profile?.experienceYears ?? ""} />
           </Field>
           <Field label="المحافظة">
             <Select name="governorateId" defaultValue={profile?.governorateId ?? ""}>
-              <option value="">— غير محدّدة —</option>
+              <option value="">— الكل —</option>
               {governorates.map((g) => <option key={g.id} value={g.id}>{g.nameAr}</option>)}
             </Select>
           </Field>

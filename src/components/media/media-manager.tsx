@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, Trash2, Loader2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 
 export interface MediaItem {
@@ -101,9 +102,7 @@ export function MediaManager({
       {error && <p className="mb-2 text-sm text-danger">{error}</p>}
 
       {items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border bg-surface-2/30 px-4 py-6 text-center text-sm text-fg-faint">
-          لا توجد ملفات مرفقة بعد.
-        </p>
+        <EmptyState title="لا توجد ملفات مرفقة بعد." />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {items.map((m) => (

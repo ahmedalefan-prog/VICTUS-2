@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Wrench, ChevronLeft } from "lucide-react";
 import { MaintenanceRequestForm } from "@/components/services/maintenance-request-form";
 import { AdSlot } from "@/components/ads/ad-slot";
@@ -20,7 +21,7 @@ export const metadata = { title: "خدمة الصيانة" };
 function RequestRow({ r, showRequester }: { r: { id: string; requestNumber: string; deviceName: string; priority: string; status: string; createdAt: Date; requester?: { fullName: string } }; showRequester: boolean }) {
   return (
     <Link href={`/maintenance/${r.id}`}
-      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-colors hover:border-primary/40">
+      className="group flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <div>
         <span className="font-medium text-fg">{r.requestNumber}</span>
         <span className="mr-2 text-xs text-fg-muted">
@@ -30,7 +31,7 @@ function RequestRow({ r, showRequester }: { r: { id: string; requestNumber: stri
       <div className="flex items-center gap-2">
         <Badge tone={MAINTENANCE_PRIORITY_META[r.priority]?.tone ?? "muted"}>{MAINTENANCE_PRIORITY_META[r.priority]?.label}</Badge>
         <Badge tone={MAINTENANCE_STATUS_META[r.status]?.tone ?? "muted"}>{MAINTENANCE_STATUS_META[r.status]?.label}</Badge>
-        <ChevronLeft className="h-4 w-4 text-fg-faint" />
+        <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
       </div>
     </Link>
   );
@@ -74,16 +75,16 @@ export default async function MaintenancePage() {
         <Card className="mb-5">
           <h3 className="mb-3 font-semibold text-fg">الطلبات النشطة</h3>
           {open.length === 0 ? (
-            <p className="py-6 text-center text-sm text-fg-muted">لا توجد طلبات نشطة.</p>
+            <EmptyState title="لا توجد طلبات نشطة." />
           ) : (
-            <div className="space-y-2">{open.map((r) => <RequestRow key={r.id} r={r} showRequester />)}</div>
+            <div className="stagger-children space-y-2">{open.map((r) => <RequestRow key={r.id} r={r} showRequester />)}</div>
           )}
         </Card>
 
         {closed.length > 0 && (
           <Card>
             <h3 className="mb-3 font-semibold text-fg">طلبات مُغلقة</h3>
-            <div className="space-y-2">{closed.map((r) => <RequestRow key={r.id} r={r} showRequester />)}</div>
+            <div className="stagger-children space-y-2">{closed.map((r) => <RequestRow key={r.id} r={r} showRequester />)}</div>
           </Card>
         )}
       </>
@@ -118,9 +119,9 @@ export default async function MaintenancePage() {
           <Card>
             <h3 className="mb-3 font-semibold text-fg">طلباتي ({requests.length})</h3>
             {requests.length === 0 ? (
-              <p className="py-6 text-center text-sm text-fg-muted">لا توجد طلبات بعد.</p>
+              <EmptyState title="لا توجد طلبات بعد." />
             ) : (
-              <div className="space-y-2">{requests.map((r) => <RequestRow key={r.id} r={r} showRequester={false} />)}</div>
+              <div className="stagger-children space-y-2">{requests.map((r) => <RequestRow key={r.id} r={r} showRequester={false} />)}</div>
             )}
           </Card>
         </div>

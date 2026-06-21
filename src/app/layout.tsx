@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
+import { Suspense } from "react";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { Toaster } from "@/components/ui/toaster";
+import { ProgressBar } from "@/components/ui/progress-bar";
+
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -43,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
+    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Apply the saved theme before paint to avoid a flash (default: dark). */}
         <script
@@ -52,9 +56,28 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col scanline">
+        <div className="futuristic-orb futuristic-orb--1" aria-hidden />
+        <div className="futuristic-orb futuristic-orb--2" aria-hidden />
+        <div className="futuristic-orb futuristic-orb--3" aria-hidden />
+        <div className="particle-field" aria-hidden>
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+          <div className="particle" />
+        </div>
         {children}
         <ServiceWorkerRegister />
+        <Toaster />
+        <Suspense fallback={null}>
+          <ProgressBar />
+        </Suspense>
       </body>
     </html>
   );

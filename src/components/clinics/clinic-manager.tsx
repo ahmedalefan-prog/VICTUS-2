@@ -6,6 +6,7 @@ import { saveClinic, deleteClinic } from "@/lib/clinic-actions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Textarea, Select, Field } from "@/components/ui/input";
 import { Plus, Pencil, Trash2, MapPin, Phone, Stethoscope } from "lucide-react";
 
@@ -41,7 +42,7 @@ export function ClinicManager({
           </Button>
         </div>
         {clinics.length === 0 ? (
-          <Card className="py-12 text-center text-fg-muted">لا توجد عيادات بعد — أضف عيادتك الأولى.</Card>
+          <EmptyState title="لا توجد عيادات بعد" description="أضف عيادتك الأولى." />
         ) : (
           clinics.map((c) => <ClinicRow key={c.id} clinic={c} showOwner={showOwner} onEdit={() => { setEditing(c); setShowForm(true); }} />)
         )}
@@ -60,7 +61,7 @@ function ClinicRow({ clinic, showOwner, onEdit }: { clinic: ClinicData; showOwne
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <Card>
+    <Card className="group transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">

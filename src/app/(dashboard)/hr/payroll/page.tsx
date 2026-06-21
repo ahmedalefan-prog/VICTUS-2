@@ -6,7 +6,8 @@ import { PAYROLL_STATUS_META, formatPayrollPeriod } from "@/lib/hr";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, ChevronLeft, Receipt } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ChevronRight, ChevronLeft, Coins } from "lucide-react";
 import { PayrollCreate } from "@/components/hr/payroll-create";
 
 export const metadata = { title: "الرواتب" };
@@ -44,10 +45,7 @@ export default async function PayrollPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-3 lg:col-span-2">
           {runs.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center py-12 text-center">
-              <Receipt className="mb-3 h-9 w-9 text-fg-faint" />
-              <p className="font-medium text-fg">لا توجد مسيّرات رواتب بعد</p>
-            </Card>
+            <EmptyState icon={<Coins className="h-7 w-7" />} title="لا توجد مسيّرات رواتب بعد" />
           ) : (
             runs.map((r) => (
               <Link key={r.id} href={`/hr/payroll/${r.id}`}>

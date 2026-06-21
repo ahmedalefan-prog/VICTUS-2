@@ -45,8 +45,8 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
 
   return (
     <>
-      <Link href="/lab/orders" className="mb-3 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
-        <ChevronRight className="h-4 w-4" /> العودة للطلبات
+      <Link href="/lab/orders" className="group mb-3 inline-flex items-center gap-1 text-sm text-fg-muted transition-colors hover:text-fg">
+        <ChevronRight className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> العودة للطلبات
       </Link>
 
       <PageHeader title={order.orderNumber} description={order.service.name}>
@@ -61,7 +61,7 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
             <h3 className="mb-3 font-semibold text-fg">بنود الطلب التصنيعي</h3>
             <div className="space-y-2">
               {order.items.map((it) => (
-                <div key={it.id} className="rounded-lg border border-border-soft bg-surface-2/40 p-3">
+                <div key={it.id} className="rounded-lg border border-border-soft bg-surface-2/40 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_16px_-8px_var(--primary)]">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-fg">{it.name}</span>
@@ -72,7 +72,7 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
                   </div>
                   {it.teeth.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {it.teeth.map((t) => <span key={t} className="rounded bg-surface-3 px-1.5 py-0.5 text-[11px] tabular-nums text-fg-muted">{t}</span>)}
+                      {it.teeth.map((t) => <span key={t} className="rounded bg-surface-3 px-1.5 py-0.5 text-[11px] tabular-nums text-fg-muted transition-colors hover:bg-primary-soft hover:text-primary">{t}</span>)}
                     </div>
                   )}
                   {it.itemNotes && <p className="mt-1.5 text-xs text-fg-muted">ملاحظة: {it.itemNotes}</p>}
@@ -106,8 +106,8 @@ export default async function LabOrderDetailPage({ params }: { params: Promise<{
               <ul className="space-y-2">
                 {order.caseFiles.map((f, i) => (
                   <li key={i}>
-                    <a href={f} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline" dir="ltr">
-                      <FileText className="h-4 w-4" /> {f}
+                    <a href={f} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-2 text-sm text-primary transition-colors hover:text-primary-strong hover:underline" dir="ltr">
+                      <FileText className="h-4 w-4 transition-transform group-hover:scale-110" /> {f}
                     </a>
                   </li>
                 ))}

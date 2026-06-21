@@ -9,6 +9,7 @@ import {
 import { formatDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { FlaskConical, Store, Wrench, ClipboardList, ChevronLeft } from "lucide-react";
 
@@ -22,8 +23,6 @@ interface Row {
   href: string;
 }
 
-// Doctor / clinic dashboard: their active orders across the three services
-// (own only — server-isolated), then the three order buttons, then ads.
 export async function RequesterHome({ userId }: { userId: string }) {
   const [orders, requests] = await Promise.all([
     prisma.serviceOrder.findMany({
@@ -63,31 +62,26 @@ export async function RequesterHome({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* current orders */}
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-semibold text-fg"><ClipboardList className="h-5 w-5 text-primary" /> الطلبات الجارية</h2>
           {rows.length > 0 && <Badge tone="warning">{rows.length} نشط</Badge>}
         </div>
         {rows.length === 0 ? (
-          <div className="py-10 text-center">
-            <ClipboardList className="mx-auto mb-2 h-9 w-9 text-fg-faint" />
-            <p className="font-medium text-fg">لا توجد طلبات جارية</p>
-            <p className="mt-1 text-sm text-fg-muted">ابدأ بطلب من إحدى الخدمات أدناه.</p>
-          </div>
+          <EmptyState title="لا توجد طلبات جارية" description="ابدأ بطلب من إحدى الخدمات أدناه." />
         ) : (
-          <ul className="space-y-2">
+          <ul className="stagger-children space-y-2">
             {rows.map((r) => (
               <li key={r.key}>
-                <Link href={r.href} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-colors hover:border-primary/40">
+                <Link href={r.href} className="group flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
                   <div className="flex items-center gap-2">
                     <Badge tone="info">{r.typeLabel}</Badge>
-                    <span className="font-medium text-fg">{r.number}</span>
+                    <span className="font-medium text-fg transition-colors group-hover:text-primary">{r.number}</span>
                     <span className="text-xs text-fg-faint">آخر تحديث {formatDate(r.at)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={r.tone}>{r.statusLabel}</Badge>
-                    <ChevronLeft className="h-4 w-4 text-fg-faint" />
+                    <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
                   </div>
                 </Link>
               </li>
@@ -96,17 +90,15 @@ export async function RequesterHome({ userId }: { userId: string }) {
         )}
       </Card>
 
-      {/* order buttons */}
       <div>
         <h2 className="mb-3 font-semibold text-fg">اطلب خدمة</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="stagger-children grid grid-cols-1 gap-3 sm:grid-cols-3">
           <OrderButton href="/lab" icon={<FlaskConical className="h-6 w-6" />} title="اطلب من المختبر" desc="تركيبات سنية" />
           <OrderButton href="/market" icon={<Store className="h-6 w-6" />} title="اطلب من السوق" desc="قطع غيار وأجهزة" />
           <OrderButton href="/maintenance" icon={<Wrench className="h-6 w-6" />} title="اطلب صيانة" desc="صيانة الأجهزة" />
         </div>
       </div>
 
-      {/* ads */}
       <AdSlot placement="DASHBOARD" />
     </div>
   );
@@ -115,10 +107,10 @@ export async function RequesterHome({ userId }: { userId: string }) {
 function OrderButton({ href, icon, title, desc }: { href: string; icon: React.ReactNode; title: string; desc: string }) {
   return (
     <Link href={href}>
-      <Card className="flex items-center gap-3 transition-colors hover:border-primary/50">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">{icon}</span>
+      <Card className="group flex items-center gap-3 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_8px_30px_-12px_var(--primary)]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-[var(--primary-fg)]">{icon}</span>
         <div>
-          <p className="font-semibold text-fg">{title}</p>
+          <p className="font-semibold text-fg transition-colors group-hover:text-primary">{title}</p>
           <p className="text-xs text-fg-muted">{desc}</p>
         </div>
       </Card>

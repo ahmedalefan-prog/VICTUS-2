@@ -37,7 +37,7 @@ export function RoleMatrix({
   }
 
   return (
-    <Card className="overflow-hidden p-0">
+    <Card className="overflow-hidden p-0 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft p-4">
         <div>
           <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export function RoleMatrix({
           </thead>
           <tbody>
             {RESOURCES.map((r) => (
-              <tr key={r.key} className="border-t border-border-soft/50">
+              <tr key={r.key} className="border-t border-border-soft/50 transition-colors hover:bg-surface-2/30">
                 <td className="px-4 py-1.5 text-fg-muted">{r.label}<span className="mr-1 text-fg-faint/50" dir="ltr">{r.key}</span></td>
                 {PERMISSION_ACTIONS.map((a) => {
                   const has = set.has(`${r.key}:${a}`);

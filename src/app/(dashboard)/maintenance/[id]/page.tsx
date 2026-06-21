@@ -8,6 +8,7 @@ import { formatIQD, formatDate, formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ChevronRight, ImageIcon } from "lucide-react";
 import { MaintenanceControls } from "@/components/services/maintenance-controls";
 
@@ -56,8 +57,8 @@ export default async function MaintenanceDetailPage({ params }: { params: Promis
 
   return (
     <>
-      <Link href="/maintenance" className="mb-3 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
-        <ChevronRight className="h-4 w-4" /> العودة للصيانة
+      <Link href="/maintenance" className="group mb-3 inline-flex items-center gap-1 text-sm text-fg-muted transition-colors hover:text-fg">
+        <ChevronRight className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> العودة للصيانة
       </Link>
 
       <PageHeader title={req.requestNumber} description={req.deviceName}>
@@ -93,11 +94,11 @@ export default async function MaintenanceDetailPage({ params }: { params: Promis
           <Card>
             <h3 className="mb-3 font-semibold text-fg">الزيارات ({req.visits.length})</h3>
             {req.visits.length === 0 ? (
-              <p className="py-4 text-center text-sm text-fg-muted">لا توجد زيارات مسجّلة.</p>
+              <EmptyState title="لا توجد زيارات مسجّلة." />
             ) : (
-              <ul className="space-y-2">
+              <ul className="stagger-children space-y-2">
                 {req.visits.map((v) => (
-                  <li key={v.id} className="rounded-lg border border-border-soft bg-surface-2/40 p-3 text-sm">
+                  <li key={v.id} className="group rounded-lg border border-border-soft bg-surface-2/40 p-3 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_16px_-8px_var(--primary)]">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-fg">{formatDate(v.visitDate)}</span>
                       <span className="text-xs text-fg-faint">{v.engineerName}</span>
@@ -112,13 +113,13 @@ export default async function MaintenanceDetailPage({ params }: { params: Promis
           <Card>
             <h3 className="mb-3 font-semibold text-fg">قطع الغيار ({req.parts.length})</h3>
             {req.parts.length === 0 ? (
-              <p className="py-4 text-center text-sm text-fg-muted">لا توجد قطع مرتبطة.</p>
+              <EmptyState title="لا توجد قطع مرتبطة." />
             ) : (
-              <div className="space-y-2">
+              <div className="stagger-children space-y-2">
                 {req.parts.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2 text-sm">
+                  <div key={p.id} className="group flex items-center justify-between rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_16px_-8px_var(--primary)]">
                     <span className="text-fg">{p.name} <span className="text-fg-faint">×{p.quantity}</span></span>
-                    <span className="font-medium text-fg">{formatIQD(Number(p.lineTotal))}</span>
+                    <span className="font-medium text-fg transition-colors group-hover:text-primary">{formatIQD(Number(p.lineTotal))}</span>
                   </div>
                 ))}
               </div>

@@ -7,6 +7,7 @@ import { APPLICATION_STATUS_META, nextApplicationStatuses } from "@/lib/jobs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Textarea, Field } from "@/components/ui/input";
 import { FileText } from "lucide-react";
 
@@ -30,7 +31,7 @@ export function ApplyForm({ jobId }: { jobId: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <h3 className="mb-3 font-semibold text-fg">التقديم على الوظيفة</h3>
       <form
         action={(fd) =>
@@ -57,7 +58,7 @@ export function JobStatusControls({ jobId, status }: { jobId: string; status: st
   const router = useRouter();
   const { pending, error, run } = useRun();
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <h3 className="mb-3 font-semibold text-fg">إدارة الوظيفة</h3>
       {error && <p className="mb-2 text-sm text-danger">{error}</p>}
       <div className="space-y-2">
@@ -85,17 +86,17 @@ interface AppItem {
 export function ApplicationsManager({ applications }: { applications: AppItem[] }) {
   const { pending, error, run } = useRun();
   if (applications.length === 0) {
-    return <Card><h3 className="mb-1 font-semibold text-fg">المتقدّمون</h3><p className="py-4 text-center text-sm text-fg-muted">لا يوجد متقدّمون بعد.</p></Card>;
+    return <Card><h3 className="mb-1 font-semibold text-fg">المتقدّمون</h3><EmptyState title="لا يوجد متقدّمون بعد." /></Card>;
   }
   return (
     <Card>
       <h3 className="mb-3 font-semibold text-fg">المتقدّمون ({applications.length})</h3>
       {error && <p className="mb-2 text-sm text-danger">{error}</p>}
-      <ul className="space-y-3">
+      <ul className="stagger-children space-y-3">
         {applications.map((a) => {
           const nexts = nextApplicationStatuses(a.status);
           return (
-            <li key={a.id} className="rounded-lg border border-border-soft bg-surface-2/40 p-3">
+            <li key={a.id} className="group rounded-lg border border-border-soft bg-surface-2/40 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_16px_-8px_var(--primary)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium text-fg">{a.applicantName}</span>
                 <Badge tone={APPLICATION_STATUS_META[a.status]?.tone ?? "muted"}>{APPLICATION_STATUS_META[a.status]?.label}</Badge>

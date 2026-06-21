@@ -7,6 +7,7 @@ import { AD_TYPE_META, CAMPAIGN_STATUS_META, ctr, placementsLabel } from "@/lib/
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Megaphone, ChevronLeft } from "lucide-react";
 import { CampaignForm } from "@/components/ads/campaign-form";
 
@@ -38,11 +39,7 @@ export default async function AdsPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className={canCreate ? "lg:col-span-2" : "lg:col-span-3"}>
           {campaigns.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center py-16 text-center">
-              <Megaphone className="mb-3 h-10 w-10 text-fg-faint" />
-              <p className="font-medium text-fg">لا توجد حملات بعد</p>
-              <p className="mt-1 text-sm text-fg-muted">أنشئ حملتك الأولى من النموذج المجاور.</p>
-            </Card>
+            <EmptyState icon={<Megaphone className="h-7 w-7" />} title="لا توجد حملات بعد" description="أنشئ حملتك الأولى من النموذج المجاور." />
           ) : (
             <Card className="p-0">
               <div className="overflow-x-auto">

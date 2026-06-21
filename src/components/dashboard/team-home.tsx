@@ -8,16 +8,15 @@ import {
 import { formatDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ClipboardCheck, ChevronLeft } from "lucide-react";
 
 interface QueueRow { id: string; number: string; statusLabel: string; tone: Parameters<typeof Badge>[0]["tone"]; at: Date; href: string; sub: string }
 
-// Service-team dashboard: their own service's queue + stage stats + console link.
 export async function TeamHome({ service }: { service: { id: string; type: string; name: string } }) {
   const isMaintenance = service.type === "MAINTENANCE";
   const resource = SERVICE_TYPE_META[service.type]?.resource ?? "lab";
 
-  // stage buckets: جديد / قيد التنفيذ / جاهز / مكتمل
   const stats = { new: 0, inProgress: 0, ready: 0, completed: 0 };
   let queue: QueueRow[] = [];
 
@@ -62,7 +61,7 @@ export async function TeamHome({ service }: { service: { id: string; type: strin
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="stagger-children grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="جديد" value={stats.new} tone="info" />
         <Stat label="قيد التنفيذ" value={stats.inProgress} tone="warning" />
         <Stat label="جاهز" value={stats.ready} tone="primary" />
@@ -72,22 +71,22 @@ export async function TeamHome({ service }: { service: { id: string; type: strin
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-semibold text-fg"><ClipboardCheck className="h-5 w-5 text-primary" /> طابور {service.name}</h2>
-          <Link href={consoleHref} className="text-sm font-medium text-primary hover:underline">الكونسول ←</Link>
+          <Link href={consoleHref} className="text-sm font-medium text-primary transition-colors hover:text-primary-strong hover:underline">الكونسول ←</Link>
         </div>
         {queue.length === 0 ? (
-          <p className="py-10 text-center text-sm text-fg-muted">لا توجد طلبات نشطة في الطابور.</p>
+          <EmptyState title="لا توجد طلبات نشطة في الطابور." />
         ) : (
           <ul className="space-y-2">
             {queue.map((q) => (
               <li key={q.id}>
-                <Link href={q.href} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-colors hover:border-primary/40">
+                <Link href={q.href} className="group flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
                   <div>
-                    <span className="font-medium text-fg">{q.number}</span>
+                    <span className="font-medium text-fg transition-colors group-hover:text-primary">{q.number}</span>
                     <span className="mr-2 text-xs text-fg-muted">{q.sub} · {formatDate(q.at)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={q.tone}>{q.statusLabel}</Badge>
-                    <ChevronLeft className="h-4 w-4 text-fg-faint" />
+                    <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
                   </div>
                 </Link>
               </li>
@@ -101,9 +100,9 @@ export async function TeamHome({ service }: { service: { id: string; type: strin
 
 function Stat({ label, value, tone }: { label: string; value: number; tone: Parameters<typeof Badge>[0]["tone"] }) {
   return (
-    <Card className="flex flex-col items-center text-center">
+    <Card className="group flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_8px_30px_-12px_var(--primary)]">
       <Badge tone={tone}>{label}</Badge>
-      <p className="mt-2 text-2xl font-bold text-fg">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-fg transition-colors group-hover:text-primary">{value}</p>
     </Card>
   );
 }

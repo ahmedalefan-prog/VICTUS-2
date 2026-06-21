@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Ripple } from "@/components/ui/ripple";
 
 // إشعار ترقية لطيف يظهر بدل المحتوى عندما لا تفتح باقة المستخدم الميزة.
 export function UpgradeNotice({ feature }: { feature: string }) {
@@ -11,9 +12,11 @@ export function UpgradeNotice({ feature }: { feature: string }) {
       </span>
       <p className="font-semibold text-fg">ميزة «{feature}» متاحة في باقة أعلى</p>
       <p className="mt-1 max-w-md text-sm text-fg-muted">رقِّ باقتك لفتح هذه الميزة وكامل قدرات المنصة.</p>
-      <Link href="/account/subscription" className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-        عرض الباقات والترقية
-      </Link>
+      <Ripple className="inline-flex rounded-lg">
+        <Link href="/account/subscription" className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+          عرض الباقات والترقية
+        </Link>
+      </Ripple>
     </Card>
   );
 }

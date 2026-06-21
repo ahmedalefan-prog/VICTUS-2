@@ -6,38 +6,47 @@ import { formatIQD, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, ChevronLeft } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import { ChevronLeft } from "lucide-react";
 
 export const metadata = { title: "طلبات المختبر" };
 
-export default async function LabOrdersPage() {
-  const session = await requirePermission("lab", "VIEW");
+const PAGE_SIZE = 20;
 
-  const orders = await prisma.serviceOrder.findMany({
-    where: { requesterId: session.user.id, serviceType: "LAB" },
-    include: { service: { select: { name: true } }, _count: { select: { items: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+export default async function LabOrdersPage(props: { searchParams: Promise<{ page?: string }> }) {
+  const session = await requirePermission("lab", "VIEW");
+  const searchParams = await props.searchParams;
+  const page = Math.max(1, Number(searchParams.page) || 1);
+
+  const [orders, total] = await Promise.all([
+    prisma.serviceOrder.findMany({
+      where: { requesterId: session.user.id, serviceType: "LAB" },
+      include: { service: { select: { name: true } }, _count: { select: { items: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.serviceOrder.count({ where: { requesterId: session.user.id, serviceType: "LAB" } }),
+  ]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <>
       <PageHeader title="طلبات المختبر" description="طلباتك لدى خدمة المختبر وحالاتها.">
-        <Badge tone="primary">{orders.length} طلب</Badge>
+        <Badge tone="primary">{total} طلب</Badge>
       </PageHeader>
 
       {orders.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <ShoppingCart className="mb-3 h-10 w-10 text-fg-faint" />
-          <p className="font-medium text-fg">لا توجد طلبات بعد</p>
-          <p className="mt-1 text-sm text-fg-muted">تصفّح كتالوج المختبر لإنشاء طلب.</p>
-        </Card>
+        <EmptyState title="لا توجد طلبات بعد" description="تصفّح كتالوج المختبر لإنشاء طلب." />
       ) : (
-        <div className="space-y-3">
+        <div className="stagger-children space-y-3">
           {orders.map((o) => (
             <Link key={o.id} href={`/lab/orders/${o.id}`}>
-              <Card className="flex flex-wrap items-center justify-between gap-3 transition-colors hover:border-primary/40">
+              <Card className="group flex flex-wrap items-center justify-between gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
                 <div>
-                  <p className="font-semibold text-fg">{o.orderNumber}</p>
+                  <p className="font-semibold text-fg transition-colors group-hover:text-primary">{o.orderNumber}</p>
                   <p className="mt-1 text-xs text-fg-muted">
                     {o.service.name} · {o._count.items} عنصر · {formatDate(o.createdAt)}
                   </p>
@@ -49,13 +58,14 @@ export default async function LabOrdersPage() {
                   {o.agreedTotal !== null && (
                     <span className="text-sm font-medium text-fg">{formatIQD(Number(o.agreedTotal))}</span>
                   )}
-                  <ChevronLeft className="h-4 w-4 text-fg-faint" />
+                  <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
                 </div>
               </Card>
             </Link>
           ))}
         </div>
       )}
+      <Pagination currentPage={page} totalPages={totalPages} baseHref="/lab/orders" />
     </>
   );
 }

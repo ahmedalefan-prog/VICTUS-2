@@ -20,7 +20,7 @@ export default async function SettingsPage() {
 
       <form action={saveSettings} className="space-y-5">
         {Object.entries(grouped).map(([group, rows]) => (
-          <Card key={group}>
+          <Card key={group} className="transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
             <h3 className="mb-4 font-semibold text-fg">{GROUP_LABELS[group] ?? group}</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {rows.map((s) => {

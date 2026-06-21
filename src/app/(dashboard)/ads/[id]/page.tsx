@@ -7,6 +7,7 @@ import { AD_TYPE_META, CAMPAIGN_STATUS_META, AD_PAYMENT_STATUS_META, AD_LEAD_TYP
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ChevronRight } from "lucide-react";
 import { AdCreative } from "@/components/ads/ad-creative";
 import { CampaignControls, LeadForm } from "@/components/ads/campaign-controls";
@@ -49,7 +50,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Card className="text-center"><p className="text-xs text-fg-muted">مشاهدات</p><p className="mt-1 text-xl font-bold text-fg">{c._count.impressions}</p></Card>
             <Card className="text-center"><p className="text-xs text-fg-muted">نقرات</p><p className="mt-1 text-xl font-bold text-fg">{c._count.clicks}</p></Card>
             <Card className="text-center"><p className="text-xs text-fg-muted">CTR</p><p className="mt-1 text-xl font-bold text-primary">{ctr(c._count.impressions, c._count.clicks)}</p></Card>
@@ -69,7 +70,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           <Card>
             <h3 className="mb-3 font-semibold text-fg">العملاء المحتملون ({c._count.leads})</h3>
             {c.leads.length === 0 ? (
-              <p className="py-4 text-center text-sm text-fg-muted">لا يوجد عملاء محتملون بعد.</p>
+              <EmptyState title="لا يوجد عملاء محتملون بعد." />
             ) : (
               <ul className="space-y-2">
                 {c.leads.map((l) => (

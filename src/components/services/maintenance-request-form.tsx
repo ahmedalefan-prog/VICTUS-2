@@ -45,7 +45,7 @@ export function MaintenanceRequestForm({ devices = [] }: { devices?: { id: strin
   }
 
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <div className="mb-4 flex items-center gap-2">
         <Wrench className="h-5 w-5 text-primary" />
         <h3 className="font-semibold text-fg">طلب صيانة جديد</h3>

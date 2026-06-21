@@ -34,7 +34,7 @@ export function PayrollCreate({ services }: { services: { id: string; name: stri
             {services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
         </Field>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="الشهر">
             <Select name="month" defaultValue={String(now.getMonth() + 1)}>
               {MONTH_NAMES_AR.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}

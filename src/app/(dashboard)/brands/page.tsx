@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Tags, ExternalLink } from "lucide-react";
 
 export const metadata = { title: "العلامات التجارية" };
@@ -18,10 +19,7 @@ export default async function BrandsPage() {
       </PageHeader>
 
       {brands.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <Tags className="mb-3 h-10 w-10 text-fg-faint" />
-          <p className="font-medium text-fg">لا توجد علامات بعد</p>
-        </Card>
+        <EmptyState icon={<Tags className="h-7 w-7" />} title="لا توجد علامات بعد" />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {brands.map((b) => (

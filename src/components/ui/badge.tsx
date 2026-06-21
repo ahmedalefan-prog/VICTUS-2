@@ -14,14 +14,18 @@ const tones: Record<Tone, string> = {
 
 export function Badge({
   tone = "muted",
+  pulse,
+  glow,
   className,
   ...props
-}: { tone?: Tone } & React.HTMLAttributes<HTMLSpanElement>) {
+}: { tone?: Tone; pulse?: boolean; glow?: boolean } & React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all duration-300",
         tones[tone],
+        pulse && "animate-status-pulse",
+        glow && "shadow-[0_0_14px_-4px_var(--primary)]",
         className,
       )}
       {...props}
@@ -43,6 +47,6 @@ const statusLabel: Record<string, string> = {
   SUSPENDED: "معلّق",
 };
 
-export function StatusBadge({ status }: { status: string }) {
-  return <Badge tone={statusTone[status] ?? "muted"}>{statusLabel[status] ?? status}</Badge>;
+export function StatusBadge({ status, glow }: { status: string; glow?: boolean }) {
+  return <Badge tone={statusTone[status] ?? "muted"} glow={glow}>{statusLabel[status] ?? status}</Badge>;
 }

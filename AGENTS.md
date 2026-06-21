@@ -34,4 +34,36 @@ SUPER_ADMIN · CLINIC_OWNER · DENTIST · SERVICE_MEMBER · JOB_SEEKER · ADVERT
   - 1) الأساس (سقالة + RBAC/تنقّل/طبقات أفقية + مخطّط + لوحة).
   - 2) المختبر · 3) السوق · 4) الصيانة (الخدمات الثلاث: طلب/توثيق/دورة تنفيذ). **بلا تفاوض** — كل طلب بالسعر المعروض.
   - 5) الطبقات المساندة: العيادات/الأجهزة · التوظيف · الإعلانات (نقل VICTUS-1، 4/صفحة) · الموارد البشرية (لكل خدمة).
-  - 6) الأدمن: مراجعة الحسابات · المستخدمون · الأدوار (مصفوفة + تجاوزات) · معاملات الخدمات (CSV) · المحافظات · التدقيق · الإعدادات · العلامات.
+   - 6) الأدمن: مراجعة الحسابات · المستخدمون · الأدوار (مصفوفة + تجاوزات) · معاملات الخدمات (CSV) · المحافظات · التدقيق · الإعدادات · العلامات.
+
+## تحسينات المجلس
+- **استجابة الموبايل**: جميع فورم الإدخال صارت `grid-cols-1 sm:grid-cols-2` (16 ملفاً — job-post-form, candidate-form, payroll-create, employee-controls×5, employee-roster, brand-manager, device-manager, campaign-form×2, lab-order-builder×2, ads/[id]/page).
+- **أزرار الإشعارات**: `md:opacity-0 md:group-hover:opacity-100` لتظهر دوماً على الموبايل.
+- **Empty States**: 38 حالة استُبدلت بـ `<EmptyState>` في 34 ملفاً.
+- **Focus Ring**: `*:focus-visible { outline: 2px solid var(--primary) }` للوحة المفاتيح.
+- **تباين النصوص**: `--fg-muted: #544e48` و `--fg-faint: #8d877f` أغمق للوضع الفاتح الزجاجي.
+- **Pagination**: مكوّن `<Pagination>` تقليدي (أرقام) + skip/take — طُبق على `market/orders`, `lab/orders`, `admin/users`, `admin/audit`, `admin/transactions`.
+- **صفحة 404**: `not-found.tsx` مخصصة.
+- **Animations**: shimmer (skeleton), pulse (badge), slide-from-top (toast), fade-in (modal backdrop).
+- **صفحة الخطأ (error.tsx)**: `src/components/ui/error-page.tsx` + `(dashboard)/error.tsx`.
+- **الوصولية (a11y)**: `aria-label` للأزرار المفقودة (sidebar، إشعارات، pagination)، `aria-current="page"` للروابط النشطة، `aria-pressed` لأزرار الفلترة.
+- **الملف الشخصي المُحسّن**: يعرض البريد، الهاتف، الحالة، تاريخ التسجيل، آخر دخول، العضويات في الخدمات، العيادات المملوكة.
+- **التصميم المستقبلي (Year 3000)**:
+  - `globals.css`: خلفية بنقاط شبكية + 3 كرات متوهجة عائمة (gradient orbs) + تحسين `.glass` بحدود متدرجة
+  - `Card`: إضافة `card-glow` — توهج نيون عند التمرير (hover shadow + border)
+  - `DataTable`: إطار زجاجي مع hover glow، صفوف `futuristic-table` مع توهج خفيف
+  - `PageHeader`: عنوان بتدرج لوني (`text-gradient`) من fg → primary
+  - `Button`: glow shadow محسّن على hover لجميع الأنواع
+  - `Badge`: دعم `glow` prop لتأثير النيون
+  - `Input/Select`: كلاس `futuristic-input` مع glow زجاجي عند focus
+  - `layout.tsx`: 3 كرات متوهجة (futuristic-orb) عائمة بخلفية التطبيق
+  - الوضع الفاتح: تم تغيير البيج الدافئ إلى **Crystal Clean** — أبيض/رمادي عصري
+- **تحسينات إضافية (المستقبل البعيد)**:
+  - `scanline` — طبقة مسح CRT خفيفة على كامل الشاشة (تأثير سايبربانك)
+  - `cyber-border` — إطار متدرج متحرك (conic-gradient يدور) يظهر عند hover على البطاقات والسايدبار
+  - `glitch` — تأثير خلل رقمي للنصوص المهمة (data-text + clip-path)
+  - `particle-field` + 10 جزيئات CSS عائمة في الخلفية (بدون JS)
+  - `neon-glow` — توهج نيون ثلاثي الطبقات
+  - `skeleton-futuristic` — هيكل تحميل متدرج مع مسح ضوئي (sweep)
+  - `useTilt` hook — تأثير 3D للبطاقات (perspective + rotateX/Y حسب mouse position)
+  - `skeleton-futuristic` في `loading.tsx` بدل Skeleton القديم

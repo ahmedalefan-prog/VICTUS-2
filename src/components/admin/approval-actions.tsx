@@ -1,34 +1,80 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { approveUser, rejectUser } from "@/lib/admin-actions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 export function ApprovalActions({ userId }: { userId: string }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [rejecting, setRejecting] = useState(false);
+  const [showReject, setShowReject] = useState(false);
   const [note, setNote] = useState("");
 
-  if (rejecting) {
-    return (
-      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="سبب الرفض (اختياري)"
-          className="h-9 flex-1 rounded-lg border border-border bg-surface-2/60 px-3 text-sm text-fg placeholder:text-fg-faint focus:border-primary focus:outline-none" />
-        <Button variant="danger" size="sm" disabled={pending} onClick={() => startTransition(() => rejectUser(userId, note))}>تأكيد الرفض</Button>
-        <Button variant="ghost" size="sm" onClick={() => setRejecting(false)}>إلغاء</Button>
-      </div>
-    );
+  function run(fn: () => Promise<void>, successMsg: string) {
+    startTransition(async () => {
+      try {
+        await fn();
+        toast({ title: successMsg, variant: "success" });
+        router.refresh();
+      } catch (e) {
+        toast({
+          title: "خطأ",
+          description: e instanceof Error ? e.message : "فشلت العملية",
+          variant: "error",
+        });
+      }
+    });
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Button size="sm" disabled={pending} onClick={() => startTransition(() => approveUser(userId))} className="gap-1.5">
-        <Check className="h-4 w-4" /> موافقة
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => setRejecting(true)} className="gap-1.5">
-        <X className="h-4 w-4" /> رفض
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          disabled={pending}
+          onClick={() => run(() => approveUser(userId), "تم قبول الحساب")}
+          className="gap-1.5"
+        >
+          <Check className="h-4 w-4" /> موافقة
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowReject(true)}
+          className="gap-1.5"
+        >
+          <X className="h-4 w-4" /> رفض
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={showReject}
+        onClose={() => setShowReject(false)}
+        onConfirm={() => {
+          run(() => rejectUser(userId, note), "تم رفض الحساب");
+          setShowReject(false);
+          setNote("");
+        }}
+        title="رفض الحساب"
+        description="هل أنت متأكد من رفض هذا الحساب؟"
+        confirmLabel="رفض"
+        variant="danger"
+        loading={pending}
+      >
+        <div className="mt-3">
+          <Input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="سبب الرفض (اختياري)"
+            className="w-full"
+          />
+        </div>
+      </ConfirmDialog>
+    </>
   );
 }

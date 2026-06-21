@@ -8,6 +8,7 @@ import { formatIQD } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Select, Textarea, Field } from "@/components/ui/input";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -40,7 +41,7 @@ export function CatalogManager({ serviceType, items }: { serviceType: string; it
           </Button>
         </div>
         {items.length === 0 ? (
-          <Card className="py-12 text-center text-fg-muted">لا توجد عناصر بعد — أضف أول عنصر.</Card>
+          <EmptyState title="لا توجد عناصر بعد" description="أضف أول عنصر." />
         ) : (
           items.map((it) => (
             <ItemRow key={it.id} item={it} isLab={isLab} isMarket={isMarket} onEdit={() => { setEditing(it); setShowForm(true); }} />

@@ -6,6 +6,7 @@ import { saveDevice, deleteDevice } from "@/lib/clinic-actions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Select, Field } from "@/components/ui/input";
 import { Plus, Pencil, Trash2, ShieldCheck } from "lucide-react";
 
@@ -44,7 +45,7 @@ export function DeviceManager({
           </Button>
         </div>
         {devices.length === 0 ? (
-          <Card className="py-12 text-center text-fg-muted">لا توجد أجهزة بعد.</Card>
+          <EmptyState title="لا توجد أجهزة بعد." />
         ) : (
           devices.map((d) => <DeviceRow key={d.id} device={d} onEdit={() => { setEditing(d); setShowForm(true); }} />)
         )}
@@ -65,7 +66,7 @@ function DeviceRow({ device, onEdit }: { device: DeviceData; onEdit: () => void 
   const expired = device.warrantyEnd ? new Date(device.warrantyEnd) < new Date() : false;
 
   return (
-    <Card>
+    <Card className="group transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -129,7 +130,7 @@ function DeviceForm({ device, clinics, onClose }: { device: DeviceData | null; c
           </Select>
         </Field>
         <Field label="اسم الجهاز"><Input name="name" required defaultValue={device?.name ?? ""} /></Field>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="العلامة"><Input name="brand" defaultValue={device?.brand ?? ""} /></Field>
           <Field label="الموديل"><Input name="model" defaultValue={device?.model ?? ""} /></Field>
         </div>

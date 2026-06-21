@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createOrder } from "@/lib/order-actions";
 import { formatIQD } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Textarea, Field } from "@/components/ui/input";
 import { Odontogram, ALL_FDI } from "@/components/services/odontogram";
 import { Package, Plus, Trash2, X } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export interface LabCatalogItem {
   id: string;
@@ -45,6 +47,14 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const teethInputRef = useRef<HTMLInputElement>(null);
+  const catalogRef = useRef<HTMLDivElement>(null);
+  const staggerDone = useRef(false);
+
+  useEffect(() => {
+    if (staggerDone.current) return;
+    const el = catalogRef.current;
+    if (el) { el.classList.add("stagger-children"); staggerDone.current = true; }
+  }, []);
 
   const colorOf = (key: string) => PALETTE[lines.findIndex((l) => l.key === key) % PALETTE.length];
 
@@ -114,9 +124,12 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
     startTransition(async () => {
       try {
         const { id } = await createOrder(payload);
+        toast({ title: "تم إنشاء الطلب", description: `تم إرسال طلبك للمختبر بنجاح`, variant: "success" });
         router.push(`/lab/orders/${id}`);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "تعذّر إنشاء الطلب");
+        const msg = e instanceof Error ? e.message : "تعذّر إنشاء الطلب";
+        setError(msg);
+        toast({ title: "فشل إنشاء الطلب", description: msg, variant: "error" });
       }
     });
   }
@@ -128,17 +141,17 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
         <Card>
           <h3 className="mb-3 font-semibold text-fg">الكتالوج — أضف الخدمات للطلب</h3>
           {items.length === 0 ? (
-            <p className="py-6 text-center text-sm text-fg-muted">لا توجد خدمات في الكتالوج بعد.</p>
+            <EmptyState title="لا توجد خدمات في الكتالوج بعد." />
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div ref={catalogRef} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {items.map((it) => (
-                <div key={it.id} className="flex items-center gap-3 rounded-lg border border-border-soft bg-surface-2/40 p-2.5">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-surface-2">
+                <div key={it.id} className="group flex items-center gap-3 rounded-lg border border-border-soft bg-surface-2/40 p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-surface-2 transition-all duration-300 group-hover:scale-110">
                     {it.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={it.imageUrl} alt={it.name} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-fg-faint"><Package className="h-5 w-5" /></div>
+                      <div className="flex h-full items-center justify-center text-fg-faint transition-colors group-hover:text-primary"><Package className="h-5 w-5" /></div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -208,7 +221,7 @@ export function LabOrderBuilder({ items }: { items: LabCatalogItem[] }) {
                   )}
                   <span className="mr-auto text-xs text-fg-muted">{l.teeth.length} وحدة · {formatIQD(unit(l) * l.teeth.length)}</span>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Input className="h-9" value={l.shade} onChange={(e) => patchLine(l.key, { shade: e.target.value })} placeholder="اللون (A2…)" />
                   <Input className="h-9" value={l.itemNotes} onChange={(e) => patchLine(l.key, { itemNotes: e.target.value })} placeholder="ملاحظة البند" />
                 </div>

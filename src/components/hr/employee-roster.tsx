@@ -9,6 +9,7 @@ import { formatIQD } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Select, Field } from "@/components/ui/input";
 import { Plus, ChevronLeft, UserRound } from "lucide-react";
 
@@ -42,10 +43,7 @@ export function EmployeeRoster({
           <Button size="sm" onClick={() => setShowForm((v) => !v)}><Plus className="h-4 w-4" /> إضافة موظف</Button>
         </div>
         {employees.length === 0 ? (
-          <Card className="flex flex-col items-center justify-center py-12 text-center">
-            <UserRound className="mb-3 h-9 w-9 text-fg-faint" />
-            <p className="font-medium text-fg">لا يوجد موظفون بعد</p>
-          </Card>
+          <EmptyState icon={<UserRound className="h-7 w-7" />} title="لا يوجد موظفون بعد" />
         ) : (
           employees.map((e) => (
             <Link key={e.id} href={`/hr/${e.id}`}>
@@ -89,7 +87,7 @@ export function EmployeeRoster({
             <Field label="الاسم الكامل"><Input name="fullName" required /></Field>
             <Field label="المسمّى الوظيفي"><Input name="position" /></Field>
             <Field label="الهاتف"><Input name="phone" dir="ltr" /></Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Field label="الراتب (IQD)"><Input name="baseSalary" type="number" min="0" step="any" dir="ltr" defaultValue={0} /></Field>
               <Field label="نوع الراتب">
                 <Select name="salaryType" defaultValue="MONTHLY">

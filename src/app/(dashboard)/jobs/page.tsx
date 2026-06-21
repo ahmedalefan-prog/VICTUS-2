@@ -7,6 +7,7 @@ import { formatIQD, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Briefcase, MapPin, Users, ChevronLeft } from "lucide-react";
 import { JobPostForm } from "@/components/jobs/job-post-form";
 import { AdSlot } from "@/components/ads/ad-slot";
@@ -32,7 +33,7 @@ function JobCard({ j, showStatus }: { j: JobRow; showStatus?: boolean }) {
   const sal = salaryLabel(j.salaryFrom, j.salaryTo);
   return (
     <Link href={`/jobs/${j.id}`}>
-      <Card className="flex flex-wrap items-center justify-between gap-3 transition-colors hover:border-primary/40">
+      <Card className="group flex flex-wrap items-center justify-between gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
         <div>
           <div className="flex items-center gap-2">
             <p className="font-semibold text-fg">{j.title}</p>
@@ -47,7 +48,7 @@ function JobCard({ j, showStatus }: { j: JobRow; showStatus?: boolean }) {
             <span>{formatDate(j.createdAt)}</span>
           </div>
         </div>
-        <ChevronLeft className="h-4 w-4 text-fg-faint" />
+        <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
       </Card>
     </Link>
   );
@@ -87,18 +88,15 @@ export default async function JobsPage() {
       {canCreate && myJobs.length > 0 && (
         <Card className="mb-5">
           <h3 className="mb-3 font-semibold text-fg">وظائفي المنشورة</h3>
-          <div className="space-y-2">{myJobs.map((j) => <JobCard key={j.id} j={j} showStatus />)}</div>
+          <div className="stagger-children space-y-2">{myJobs.map((j) => <JobCard key={j.id} j={j} showStatus />)}</div>
         </Card>
       )}
 
       <h3 className="mb-3 font-semibold text-fg">وظائف منشورة</h3>
       {openJobs.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <Briefcase className="mb-3 h-10 w-10 text-fg-faint" />
-          <p className="font-medium text-fg">لا توجد وظائف منشورة حالياً</p>
-        </Card>
+        <EmptyState icon={<Briefcase className="h-7 w-7" />} title="لا توجد وظائف منشورة حالياً" />
       ) : (
-        <div className="space-y-3">{openJobs.map((j) => <JobCard key={j.id} j={j} />)}</div>
+        <div className="stagger-children space-y-3">{openJobs.map((j) => <JobCard key={j.id} j={j} />)}</div>
       )}
     </>
   );

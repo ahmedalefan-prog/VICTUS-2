@@ -6,6 +6,7 @@ import { AD_TYPE_META, CAMPAIGN_STATUS_META, AD_PAYMENT_STATUS_META, ctr } from 
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata = { title: "إيرادات الإعلانات" };
 
@@ -34,23 +35,23 @@ export default async function RevenuePage() {
         <Link href="/admin/ads" className="text-sm font-medium text-primary hover:underline">مراجعة الحملات ←</Link>
       </PageHeader>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <Card className="border-primary/30">
+      <div className="stagger-children mb-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <Card className="group border-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_-12px_var(--primary)]">
           <p className="text-xs text-fg-muted">الإيراد المُحصّل</p>
           <p className="mt-1 text-xl font-bold text-primary">{formatIQD(collected)}</p>
           <p className="mt-0.5 text-xs text-fg-faint">{paidAgg._count} حملة مدفوعة</p>
         </Card>
-        <Card>
+        <Card className="group transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_8px_30px_-12px_var(--primary)]">
           <p className="text-xs text-fg-muted">مستحقّ قيد التحصيل</p>
-          <p className="mt-1 text-xl font-bold text-fg">{formatIQD(pendingDue)}</p>
+          <p className="mt-1 text-xl font-bold text-fg transition-colors group-hover:text-primary">{formatIQD(pendingDue)}</p>
         </Card>
-        <Card>
+        <Card className="group transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_8px_30px_-12px_var(--primary)]">
           <p className="text-xs text-fg-muted">حملات نشطة</p>
-          <p className="mt-1 text-xl font-bold text-fg">{activeCount}</p>
+          <p className="mt-1 text-xl font-bold text-fg transition-colors group-hover:text-primary">{activeCount}</p>
         </Card>
-        <Card>
+        <Card className="group transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_8px_30px_-12px_var(--primary)]">
           <p className="text-xs text-fg-muted">الأداء الكلي</p>
-          <p className="mt-1 text-sm font-bold text-fg">{imp} مشاهدة · {clk} نقرة</p>
+          <p className="mt-1 text-sm font-bold text-fg transition-colors group-hover:text-primary">{imp} مشاهدة · {clk} نقرة</p>
           <p className="mt-0.5 text-xs text-fg-faint">CTR {ctr(imp, clk)}</p>
         </Card>
       </div>
@@ -70,9 +71,9 @@ export default async function RevenuePage() {
             </thead>
             <tbody>
               {recent.map((c) => (
-                <tr key={c.id} className="border-b border-border-soft/60 last:border-0 hover:bg-surface-2/30">
+                <tr key={c.id} className="border-b border-border-soft/60 last:border-0 transition-all hover:bg-surface-2/30 hover:shadow-[inset_0_0_16px_-12px_var(--primary)]">
                   <td className="px-4 py-3">
-                    <Link href={`/ads/${c.id}`} className="font-medium text-fg hover:text-primary">{c.title}</Link>
+                    <Link href={`/ads/${c.id}`} className="font-medium text-fg transition-colors hover:text-primary">{c.title}</Link>
                     <p className="text-xs text-fg-faint">{c.campaignNumber} · {formatDate(c.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3 text-fg-muted">{c.advertiser.name}</td>
@@ -86,7 +87,7 @@ export default async function RevenuePage() {
                 </tr>
               ))}
               {recent.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-fg-muted">لا توجد حملات بعد.</td></tr>
+                <tr><td colSpan={100}><EmptyState title="لا توجد حملات بعد." /></td></tr>
               )}
             </tbody>
           </table>

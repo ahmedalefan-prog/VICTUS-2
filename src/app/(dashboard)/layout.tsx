@@ -3,6 +3,8 @@ import { signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ACCOUNT_TYPES } from "@/lib/rbac";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { ScrollToTop } from "@/components/ui/scroll-top";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export default async function DashboardLayout({
   children,
@@ -25,18 +27,21 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardShell
-      permissions={session.user.permissions}
-      user={{
-        id: session.user.id,
-        name: session.user.name ?? "مستخدم",
-        email: session.user.email ?? "",
-        accountTypeLabel,
-      }}
-      unreadCount={unreadCount}
-      signOutAction={signOutAction}
-    >
-      {children}
-    </DashboardShell>
+    <ErrorBoundary>
+      <DashboardShell
+        permissions={session.user.permissions}
+        user={{
+          id: session.user.id,
+          name: session.user.name ?? "مستخدم",
+          email: session.user.email ?? "",
+          accountTypeLabel,
+        }}
+        unreadCount={unreadCount}
+        signOutAction={signOutAction}
+      >
+        {children}
+      </DashboardShell>
+      <ScrollToTop />
+    </ErrorBoundary>
   );
 }

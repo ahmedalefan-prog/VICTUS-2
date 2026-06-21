@@ -38,7 +38,7 @@ export function JobPostForm({ governorates }: { governorates: { id: string; name
       >
         {error && <p className="text-sm text-danger">{error}</p>}
         <Field label="عنوان الوظيفة"><Input name="title" required /></Field>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="نوع الدوام">
             <Select name="employmentType" defaultValue="FULL_TIME">
               {Object.entries(EMPLOYMENT_TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -51,7 +51,7 @@ export function JobPostForm({ governorates }: { governorates: { id: string; name
             </Select>
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="الراتب من (IQD)"><Input name="salaryFrom" type="number" min="0" step="any" dir="ltr" /></Field>
           <Field label="الراتب إلى (IQD)"><Input name="salaryTo" type="number" min="0" step="any" dir="ltr" /></Field>
         </div>

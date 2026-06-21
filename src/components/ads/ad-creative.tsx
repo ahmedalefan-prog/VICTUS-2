@@ -44,7 +44,7 @@ export function AdCreative({ data, clickHref }: { data: AdCreativeData; clickHre
   const hasMedia = (showVideoFirst && firstVideo) || galleryImages.length > 0;
 
   return (
-    <div className={cn("overflow-hidden rounded-[var(--radius)] border border-primary/30 bg-primary-soft/30", data.wideBanner && "w-full")}>
+    <div className={cn("group overflow-hidden rounded-[var(--radius)] border border-primary/30 bg-primary-soft/30 transition-all duration-300 hover:border-primary/60 hover:shadow-[0_0_30px_-12px_var(--primary)]", data.wideBanner && "w-full")}>
       {showVideoFirst && firstVideo && <VideoPlayer url={firstVideo} poster={data.thumbnailUrl} autoplayMuted={data.autoplayMuted} />}
       {galleryImages.length > 1 ? (
         <Carousel images={galleryImages} title={data.title} clickHref={clickHref} />
@@ -64,15 +64,15 @@ export function AdCreative({ data, clickHref }: { data: AdCreativeData; clickHre
       <div className="flex items-center justify-between gap-3 p-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-fg">{data.title}</p>
-          <p className="text-[11px] text-primary">إعلان مموّل</p>
+          <p className="text-[11px] text-primary/80 group-hover:text-primary transition-colors">إعلان مموّل</p>
         </div>
         {ctaLabel &&
           (clickHref ? (
-            <a href={clickHref} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[var(--primary-fg)] transition-opacity hover:opacity-90">
+            <a href={clickHref} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[var(--primary-fg)] transition-all duration-300 hover:shadow-[0_0_16px_-6px_var(--primary)] hover:brightness-110">
               <CtaIcon className="h-3.5 w-3.5" /> {ctaLabel}
             </a>
           ) : (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[var(--primary-fg)]">
+            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-[var(--primary-fg)] transition-all duration-300 hover:shadow-[0_0_16px_-6px_var(--primary)] hover:brightness-110">
               <CtaIcon className="h-3.5 w-3.5" /> {ctaLabel}
             </span>
           ))}

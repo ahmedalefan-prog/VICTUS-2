@@ -6,6 +6,7 @@ import { saveBrand, toggleBrandActive, deleteBrand } from "@/lib/brand-actions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Textarea, Field } from "@/components/ui/input";
 import { Plus, Pencil, Trash2, Tags } from "lucide-react";
 
@@ -31,10 +32,7 @@ export function BrandManager({ brands }: { brands: BrandData[] }) {
           <Button size="sm" onClick={() => { setEditing(null); setShowForm(true); }}><Plus className="h-4 w-4" /> إضافة علامة</Button>
         </div>
         {brands.length === 0 ? (
-          <Card className="flex flex-col items-center justify-center py-12 text-center">
-            <Tags className="mb-3 h-9 w-9 text-fg-faint" />
-            <p className="font-medium text-fg">لا توجد علامات بعد</p>
-          </Card>
+          <EmptyState icon={<Tags className="h-7 w-7" />} title="لا توجد علامات بعد" />
         ) : (
           brands.map((b) => <BrandRow key={b.id} brand={b} onEdit={() => { setEditing(b); setShowForm(true); }} />)
         )}
@@ -49,7 +47,7 @@ function BrandRow({ brand, onEdit }: { brand: BrandData; onEdit: () => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <Card className={`flex flex-wrap items-center justify-between gap-3 ${brand.isActive ? "" : "opacity-60"}`}>
+    <Card className={`group flex flex-wrap items-center justify-between gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)] ${brand.isActive ? "" : "opacity-60"}`}>
       <div className="flex items-center gap-3">
         {brand.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- external brand logos
@@ -101,7 +99,7 @@ function BrandForm({ brand, onClose }: { brand: BrandData | null; onClose: () =>
         {error && <p className="text-sm text-danger">{error}</p>}
         {brand && <input type="hidden" name="id" value={brand.id} />}
         <Field label="الاسم"><Input name="name" required defaultValue={brand?.name ?? ""} /></Field>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="الفئة"><Input name="category" defaultValue={brand?.category ?? ""} /></Field>
           <Field label="البلد"><Input name="country" defaultValue={brand?.country ?? ""} /></Field>
         </div>

@@ -7,6 +7,7 @@ import { EMPLOYEE_STATUS_META, SALARY_TYPE_META, LEAVE_TYPE_META, LEAVE_STATUS_M
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input, Select, Field } from "@/components/ui/input";
 import { LogIn, LogOut } from "lucide-react";
 
@@ -53,7 +54,7 @@ export function EmployeeEditForm({ employee }: { employee: EmployeeData }) {
         <Field label="الاسم"><Input name="fullName" required defaultValue={employee.fullName} /></Field>
         <Field label="المسمّى"><Input name="position" defaultValue={employee.position} /></Field>
         <Field label="الهاتف"><Input name="phone" dir="ltr" defaultValue={employee.phone} /></Field>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="الراتب (IQD)"><Input name="baseSalary" type="number" min="0" step="any" dir="ltr" defaultValue={employee.baseSalary} /></Field>
           <Field label="نوع الراتب">
             <Select name="salaryType" defaultValue={employee.salaryType}>
@@ -61,7 +62,7 @@ export function EmployeeEditForm({ employee }: { employee: EmployeeData }) {
             </Select>
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="تاريخ التعيين"><Input name="hireDate" type="date" dir="ltr" defaultValue={employee.hireDate} /></Field>
           <Field label="الحالة">
             <Select name="status" defaultValue={employee.status}>
@@ -116,7 +117,7 @@ function ManualAttendanceForm({ employeeId }: { employeeId: string }) {
           {Object.entries(ATTENDANCE_STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </Select>
       </Field>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Field label="دخول"><Input name="checkIn" type="time" dir="ltr" /></Field>
         <Field label="خروج"><Input name="checkOut" type="time" dir="ltr" /></Field>
       </div>
@@ -150,7 +151,7 @@ export function LeaveControls({ employeeId, leaves }: { employeeId: string; leav
         className="mb-4 space-y-2 rounded-lg border border-border-soft bg-surface-2/30 p-3"
       >
         <input type="hidden" name="employeeId" value={employeeId} />
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="النوع">
             <Select name="type" defaultValue="ANNUAL">
               {Object.entries(LEAVE_TYPE_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -158,7 +159,7 @@ export function LeaveControls({ employeeId, leaves }: { employeeId: string; leav
           </Field>
           <Field label="السبب"><Input name="reason" /></Field>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <Field label="من"><Input name="startDate" type="date" required dir="ltr" /></Field>
           <Field label="إلى"><Input name="endDate" type="date" required dir="ltr" /></Field>
         </div>
@@ -166,7 +167,7 @@ export function LeaveControls({ employeeId, leaves }: { employeeId: string; leav
       </form>
 
       {leaves.length === 0 ? (
-        <p className="py-2 text-center text-sm text-fg-muted">لا توجد إجازات.</p>
+        <EmptyState title="لا توجد إجازات." />
       ) : (
         <ul className="space-y-2">
           {leaves.map((l) => {

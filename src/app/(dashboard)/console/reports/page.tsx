@@ -7,6 +7,7 @@ import { formatIQD, formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ChevronRight, Handshake } from "lucide-react";
 
 export const metadata = { title: "تقارير الخدمة" };
@@ -93,14 +94,14 @@ export default async function ConsoleReportsPage() {
                 <span className="font-medium text-fg">{n}</span>
               </div>
             ))}
-            {orders.length === 0 && <p className="text-fg-muted">لا توجد طلبات بعد.</p>}
+            {orders.length === 0 && <EmptyState title="لا توجد طلبات بعد." />}
           </div>
         </Card>
 
         <Card>
           <h3 className="mb-3 font-semibold text-fg">نشاط الأعضاء</h3>
           {activity.size === 0 ? (
-            <p className="text-sm text-fg-muted">لا يوجد نشاط بعد.</p>
+            <EmptyState title="لا يوجد نشاط بعد." />
           ) : (
             <ul className="space-y-2 text-sm">
               {[...activity.values()].map((a, i) => (
@@ -117,7 +118,7 @@ export default async function ConsoleReportsPage() {
       <Card className="mt-5">
         <h3 className="mb-3 font-semibold text-fg">سجل تغيّر الأسعار</h3>
         {priceLogs.length === 0 ? (
-          <p className="text-sm text-fg-muted">لا توجد تغييرات أسعار بعد.</p>
+          <EmptyState title="لا توجد تغييرات أسعار بعد." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

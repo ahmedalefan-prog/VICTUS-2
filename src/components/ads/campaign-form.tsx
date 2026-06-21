@@ -139,7 +139,7 @@ export function CampaignForm({ governorates }: { governorates: { code: string; n
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Field label="زر الإجراء">
           <Select name="ctaType" value={ctaType} onChange={(e) => setCtaType(e.target.value)}>
             <option value="">— بلا —</option>
@@ -160,7 +160,7 @@ export function CampaignForm({ governorates }: { governorates: { code: string; n
       </div>
 
       <Field label="الميزانية (IQD)"><Input name="budget" type="number" min="0" defaultValue={0} dir="ltr" /></Field>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Field label="من"><Input name="startDate" type="date" required dir="ltr" /></Field>
         <Field label="إلى"><Input name="endDate" type="date" required dir="ltr" /></Field>
       </div>

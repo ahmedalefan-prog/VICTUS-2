@@ -46,8 +46,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <>
-      <Link href="/jobs" className="mb-3 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
-        <ChevronRight className="h-4 w-4" /> العودة للوظائف
+      <Link href="/jobs" className="group mb-3 inline-flex items-center gap-1 text-sm text-fg-muted transition-colors hover:text-fg">
+        <ChevronRight className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> العودة للوظائف
       </Link>
 
       <PageHeader title={job.title} description={job.jobNumber}>

@@ -5,8 +5,8 @@ import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ApprovalActions } from "@/components/admin/approval-actions";
-import { Inbox } from "lucide-react";
 
 export const metadata = { title: "مراجعة الحسابات" };
 
@@ -27,15 +27,11 @@ export default async function ApprovalsPage() {
       </PageHeader>
 
       {pending.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center py-16 text-center">
-          <Inbox className="mb-3 h-10 w-10 text-fg-faint" />
-          <p className="font-medium text-fg">لا توجد طلبات بانتظار المراجعة</p>
-          <p className="mt-1 text-sm text-fg-muted">ستظهر هنا الحسابات الجديدة عند تسجيلها.</p>
-        </Card>
+        <EmptyState title="لا توجد طلبات بانتظار المراجعة" description="ستظهر هنا الحسابات الجديدة عند تسجيلها." />
       ) : (
-        <div className="space-y-3">
+        <div className="stagger-children space-y-3">
           {pending.map((u) => (
-            <Card key={u.id} className="flex flex-wrap items-center justify-between gap-4">
+            <Card key={u.id} className="group flex flex-wrap items-center justify-between gap-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
               <div className="flex items-center gap-4">
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-3 text-base font-bold text-primary">{u.fullName.charAt(0)}</span>
                 <div>

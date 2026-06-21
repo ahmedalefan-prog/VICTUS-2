@@ -6,6 +6,7 @@ import { AD_TYPE_META, AD_TYPES, placementsLabel } from "@/lib/ads";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ReviewActions, PricingForm } from "@/components/ads/review-controls";
 import { Megaphone, ChevronLeft } from "lucide-react";
 
@@ -35,15 +36,12 @@ export default async function AdminAdsPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-3 lg:col-span-2">
           {pendingCampaigns.length === 0 ? (
-            <Card className="flex flex-col items-center justify-center py-12 text-center">
-              <Megaphone className="mb-3 h-9 w-9 text-fg-faint" />
-              <p className="font-medium text-fg">لا توجد حملات بانتظار المراجعة</p>
-            </Card>
+            <EmptyState icon={<Megaphone className="h-7 w-7" />} title="لا توجد حملات بانتظار المراجعة" />
           ) : (
             pendingCampaigns.map((c) => (
-              <Card key={c.id} className="flex flex-wrap items-center justify-between gap-3">
+              <Card key={c.id} className="group flex flex-wrap items-center justify-between gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
                 <div>
-                  <Link href={`/ads/${c.id}`} className="font-medium text-fg hover:text-primary">{c.title}</Link>
+                  <Link href={`/ads/${c.id}`} className="font-medium text-fg transition-colors hover:text-primary">{c.title}</Link>
                   <p className="text-xs text-fg-faint" dir="ltr">{c.campaignNumber} · {c.advertiser.name}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
                     <Badge tone="primary">{AD_TYPE_META[c.adType]?.label}</Badge>

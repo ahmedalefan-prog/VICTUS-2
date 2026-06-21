@@ -28,7 +28,7 @@ export default async function GovernoratesPage() {
         </div>
         <div className="grid grid-cols-1 gap-px bg-border-soft/40 sm:grid-cols-2 lg:grid-cols-3">
           {governorates.map((g) => (
-            <div key={g.id} className="flex items-center justify-between bg-surface p-4">
+            <div key={g.id} className="group flex items-center justify-between bg-surface p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_-8px_var(--primary)]">
               <div className="flex items-center gap-3">
                 <MapPin className="h-4 w-4 text-primary" />
                 <div>

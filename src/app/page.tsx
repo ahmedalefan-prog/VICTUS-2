@@ -51,34 +51,34 @@ export default async function Home() {
 
       {/* hero */}
       <section className="mx-auto w-full max-w-6xl px-4 py-20 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2/60 px-4 py-1.5 text-xs text-fg-muted">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2/60 px-4 py-1.5 text-xs text-fg-muted animate-fade-in" style={{ animationDelay: "0.1s", animationFillMode: "both" }}>
           <ShieldCheck className="h-3.5 w-3.5 text-primary" /> منصة وطنية رقمية · العراق · IQD
         </span>
-        <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-fg sm:text-5xl">
+        <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-tight tracking-tight text-fg sm:text-5xl animate-fade-up" style={{ animationDelay: "0.2s", animationFillMode: "both" }}>
           كل ما يحتاجه <span className="text-primary">طبيب الأسنان</span> في مكان واحد
         </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-fg-muted">
+        <p className="mx-auto mt-5 max-w-2xl text-lg text-fg-muted animate-fade-up" style={{ animationDelay: "0.3s", animationFillMode: "both" }}>
           المختبر · السوق · الصيانة — إضافةً إلى الوظائف والإعلانات. منصّة عربية متكاملة لقطاع طب الأسنان في العراق.
         </p>
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <Link href="/register"><Button size="lg" className="gap-2">ابدأ الآن <ArrowLeft className="h-4 w-4" /></Button></Link>
-          <Link href="/login"><Button variant="outline" size="lg">تسجيل الدخول</Button></Link>
+        <div className="mt-8 flex items-center justify-center gap-3 animate-fade-up" style={{ animationDelay: "0.4s", animationFillMode: "both" }}>
+          <Link href="/register"><Button size="lg" className="gap-2 group transition-all duration-300 hover:scale-105">ابدأ الآن <ArrowLeft className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Button></Link>
+          <Link href="/login"><Button variant="outline" size="lg" className="transition-all duration-300 hover:scale-105">تسجيل الدخول</Button></Link>
         </div>
       </section>
 
       {/* three services */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-4">
-        <h2 className="mb-6 text-center text-2xl font-bold text-fg">خدماتنا الثلاث</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <h2 className="mb-6 text-center text-2xl font-bold text-fg animate-fade-up" style={{ animationDelay: "0.1s", animationFillMode: "both" }}>خدماتنا الثلاث</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 stagger-children">
           {SERVICES.map((s) => (
-            <div key={s.title} className="card glass flex flex-col rounded-[var(--radius)] p-6">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <div key={s.title} className="card glass flex flex-col rounded-[var(--radius)] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_-12px_var(--primary)] hover:border-primary/30 group">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-soft text-primary transition-transform duration-300 group-hover:scale-110">
                 <s.icon className="h-6 w-6" />
               </span>
               <h3 className="mt-4 text-lg font-semibold text-fg">{s.title}</h3>
               <p className="mt-1.5 flex-1 text-sm text-fg-muted">{s.desc}</p>
-              <Link href="/register" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                اعرف المزيد <ArrowLeft className="h-3.5 w-3.5" />
+              <Link href="/register" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline group/link">
+                اعرف المزيد <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-1" />
               </Link>
             </div>
           ))}
@@ -87,11 +87,11 @@ export default async function Home() {
 
       {/* audience */}
       <section className="mx-auto w-full max-w-6xl px-4 py-16">
-        <h2 className="mb-6 text-center text-2xl font-bold text-fg">لمن المنصة؟</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <h2 className="mb-6 text-center text-2xl font-bold text-fg animate-fade-up" style={{ animationDelay: "0.1s", animationFillMode: "both" }}>لمن المنصة؟</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
           {AUDIENCE.map((a) => (
-            <div key={a.title} className="rounded-[var(--radius)] border border-border-soft bg-surface-2/40 p-5 text-center">
-              <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary-soft text-primary">
+            <div key={a.title} className="rounded-[var(--radius)] border border-border-soft bg-surface-2/40 p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg group">
+              <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-primary-soft text-primary transition-transform duration-300 group-hover:scale-110">
                 <a.icon className="h-5 w-5" />
               </span>
               <h3 className="mt-3 font-semibold text-fg">{a.title}</h3>
@@ -102,10 +102,10 @@ export default async function Home() {
       </section>
 
       {/* jobs */}
-      <section className="mx-auto w-full max-w-6xl px-4 pb-16">
-        <div className="card glass flex flex-col items-center gap-4 rounded-[var(--radius)] p-8 text-center sm:flex-row sm:justify-between sm:text-right">
+      <section className="mx-auto w-full max-w-6xl px-4 pb-16 animate-fade-up" style={{ animationDelay: "0.2s", animationFillMode: "both" }}>
+        <div className="card glass flex flex-col items-center gap-4 rounded-[var(--radius)] p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 sm:flex-row sm:justify-between sm:text-right group">
           <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary transition-transform duration-300 group-hover:scale-110">
               <Briefcase className="h-6 w-6" />
             </span>
             <div>
@@ -113,7 +113,7 @@ export default async function Home() {
               <p className="mt-1 text-sm text-fg-muted">فرص عمل من العيادات والمختبرات — تصفّح وتقديم متاح للجميع.</p>
             </div>
           </div>
-          <Link href="/register"><Button className="gap-2">تصفّح الوظائف <ArrowLeft className="h-4 w-4" /></Button></Link>
+          <Link href="/register"><Button className="gap-2 transition-all duration-300 hover:scale-105">تصفّح الوظائف <ArrowLeft className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Button></Link>
         </div>
       </section>
 

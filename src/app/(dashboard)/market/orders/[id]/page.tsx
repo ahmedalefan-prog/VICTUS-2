@@ -42,8 +42,8 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
 
   return (
     <>
-      <Link href="/market/orders" className="mb-3 inline-flex items-center gap-1 text-sm text-fg-muted hover:text-fg">
-        <ChevronRight className="h-4 w-4" /> العودة للطلبات
+      <Link href="/market/orders" className="group mb-3 inline-flex items-center gap-1 text-sm text-fg-muted transition-colors hover:text-fg">
+        <ChevronRight className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> العودة للطلبات
       </Link>
 
       <PageHeader title={order.orderNumber} description={order.service.name}>
@@ -66,7 +66,7 @@ export default async function MarketOrderDetailPage({ params }: { params: Promis
                 </thead>
                 <tbody>
                   {order.items.map((it) => (
-                    <tr key={it.id} className="border-b border-border-soft/50">
+                    <tr key={it.id} className="border-b border-border-soft/50 transition-colors hover:bg-surface-2/30">
                       <td className="py-2 text-fg">{it.name}</td>
                       <td className="py-2 text-fg">{it.quantity}</td>
                       <td className="py-2 text-fg-muted">{formatIQD(Number(it.listedPrice))}</td>

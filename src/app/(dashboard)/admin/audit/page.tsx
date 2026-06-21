@@ -4,6 +4,8 @@ import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/layout/dashboard-shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/pagination";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export const metadata = { title: "سجل العمليات" };
 
@@ -26,19 +28,32 @@ const ACTION_LABELS: Record<string, string> = {
   "brand.delete": "حذف علامة",
 };
 
-export default async function AuditPage() {
-  await requirePermission("audit", "VIEW");
+const PAGE_SIZE = 50;
 
-  const logs = await prisma.auditLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: { actor: { select: { fullName: true } } },
-  });
+export default async function AuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  await requirePermission("audit", "VIEW");
+  const sp = await searchParams;
+  const currentPage = Math.max(1, Number(sp.page) || 1);
+
+  const [logs, total] = await Promise.all([
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (currentPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      include: { actor: { select: { fullName: true } } },
+    }),
+    prisma.auditLog.count(),
+  ]);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <>
       <PageHeader title="سجل العمليات" description="سجل غير قابل للتعديل لكل العمليات الحساسة على المنصة (Audit Log).">
-        <Badge tone="muted">{logs.length} عملية</Badge>
+        <Badge tone="muted">{total} عملية</Badge>
       </PageHeader>
 
       <Card className="overflow-hidden p-0">
@@ -54,7 +69,7 @@ export default async function AuditPage() {
             </thead>
             <tbody>
               {logs.map((l) => (
-                <tr key={l.id} className="border-b border-border-soft/60 last:border-0">
+                <tr key={l.id} className="border-b border-border-soft/60 last:border-0 transition-colors hover:bg-surface-2/30">
                   <td className="px-4 py-3"><Badge tone="primary">{ACTION_LABELS[l.action] ?? l.action}</Badge></td>
                   <td className="px-4 py-3 text-fg-muted">{l.actor?.fullName ?? "—"}</td>
                   <td className="px-4 py-3 text-fg-faint" dir="ltr">{l.entityType ? `${l.entityType}#${l.entityId?.slice(0, 6)}` : "—"}</td>
@@ -62,12 +77,13 @@ export default async function AuditPage() {
                 </tr>
               ))}
               {logs.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-10 text-center text-fg-muted">لا توجد عمليات مسجّلة بعد.</td></tr>
+                <tr><td colSpan={100}><EmptyState title="لا توجد عمليات مسجّلة بعد." /></td></tr>
               )}
             </tbody>
           </table>
         </div>
       </Card>
+      <Pagination currentPage={currentPage} totalPages={totalPages} baseHref="/admin/audit" />
     </>
   );
 }
