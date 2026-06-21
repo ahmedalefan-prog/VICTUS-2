@@ -41,7 +41,47 @@ export default async function AdsPage() {
           {campaigns.length === 0 ? (
             <EmptyState icon={<Megaphone className="h-7 w-7" />} title="لا توجد حملات بعد" description="أنشئ حملتك الأولى من النموذج المجاور." />
           ) : (
-            <Card className="p-0">
+            <>
+            {/* بطاقات (جوال) */}
+            <div className="space-y-3 md:hidden">
+              {campaigns.map((c) => {
+                const st = CAMPAIGN_STATUS_META[c.status];
+                return (
+                  <Link key={c.id} href={`/ads/${c.id}`} className="group block">
+                    <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-medium text-fg transition-colors group-hover:text-primary">{c.title}</p>
+                          <p className="truncate text-xs text-fg-faint">{c.campaignNumber} · {placementsLabel(c.placements)}</p>
+                        </div>
+                        <Badge tone={st?.tone ?? "muted"}>{st?.label}</Badge>
+                      </div>
+                      <div className="mt-3">
+                        <Badge tone="primary">{AD_TYPE_META[c.adType]?.label}</Badge>
+                      </div>
+                      <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border-soft/60 pt-3 text-center">
+                        <div>
+                          <p className="text-sm font-bold text-fg">{c._count.impressions}</p>
+                          <p className="text-[11px] text-fg-faint">مشاهدة</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-fg">{c._count.clicks}</p>
+                          <p className="text-[11px] text-fg-faint">نقرة</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-fg">{ctr(c._count.impressions, c._count.clicks)}</p>
+                          <p className="text-[11px] text-fg-faint">CTR</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-center text-xs text-fg-muted">{c._count.leads} عميل محتمل</p>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* جدول (ديسكتوب) */}
+            <Card className="hidden p-0 md:block">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -78,6 +118,7 @@ export default async function AdsPage() {
                 </table>
               </div>
             </Card>
+            </>
           )}
         </div>
 

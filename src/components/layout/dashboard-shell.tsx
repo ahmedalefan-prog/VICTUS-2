@@ -99,7 +99,7 @@ export function DashboardShell({
       {/* sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-40 w-72 shrink-0 overflow-y-auto border-l border-border-soft bg-bg-soft/80 px-3 py-5 backdrop-blur-xl transition-transform duration-300 print:hidden",
+          "fixed inset-y-0 right-0 z-40 w-72 shrink-0 overflow-y-auto border-l border-border-soft bg-bg-soft/80 px-3 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-[calc(1.25rem+env(safe-area-inset-top))] backdrop-blur-xl transition-transform duration-300 print:hidden",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
@@ -200,7 +200,8 @@ export function DashboardShell({
 
       {/* main column */}
       <div className={cn("flex min-w-0 flex-1 flex-col transition-[margin] duration-300", open && "lg:mr-72")}>
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border-soft bg-bg/80 px-4 backdrop-blur-md lg:px-6 print:hidden">
+        <header className="sticky top-0 z-20 border-b border-border-soft bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md print:hidden">
+          <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
           <button className="text-fg" onClick={() => setOpen((p) => !p)} aria-label={open ? "إغلاق القائمة الجانبية" : "فتح القائمة الجانبية"}>
             {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -250,9 +251,10 @@ export function DashboardShell({
               </Button>
             </form>
           </div>
+          </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 pb-24 lg:px-8 lg:py-8 lg:pb-8">
+        <main className="flex-1 px-4 py-6 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-8">
           <div className="mx-auto w-full max-w-7xl animate-fade-in">
             {children}
           </div>
@@ -260,7 +262,7 @@ export function DashboardShell({
       </div>
 
       {/* شريط التنقّل السفلي (جوال فقط) */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-border-soft bg-bg/70 backdrop-blur-xl lg:hidden print:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-border-soft bg-bg/70 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden print:hidden">
         {dashboardAllowed && (
           <BottomNavLink
             href={DASHBOARD_NAV.href}
