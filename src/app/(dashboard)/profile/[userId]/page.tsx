@@ -39,7 +39,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   return (
     <div className="relative">
       {/* cover */}
-      <div className="relative mb-20 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent">
+      <div className="relative mb-8 overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent sm:mb-20">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
           <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-primary/20 blur-[100px]" />
           <div className="absolute -right-16 -top-8 h-48 w-48 rounded-full bg-accent/15 blur-[80px]" />
@@ -52,7 +52,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
         <div className="relative flex flex-col items-center px-6 pb-8 pt-16 sm:flex-row sm:items-end sm:gap-8 sm:pb-6 sm:pt-24">
           {/* avatar */}
-          <div className="group relative -mb-14 sm:mb-0">
+          <div className="group relative mb-0">
             <div className="relative">
               <div className="absolute inset-0 animate-pulse-glow rounded-full opacity-60" />
               <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-primary via-accent to-primary opacity-40 blur-sm" />
