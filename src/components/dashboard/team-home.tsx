@@ -79,12 +79,12 @@ export async function TeamHome({ service }: { service: { id: string; type: strin
           <ul className="space-y-2">
             {queue.map((q) => (
               <li key={q.id}>
-                <Link href={q.href} className="group flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
-                  <div>
+                <Link href={q.href} className="group flex flex-col gap-2 rounded-xl border border-border-soft bg-surface-2/40 px-3 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2.5">
+                  <div className="min-w-0">
                     <span className="font-medium text-fg transition-colors group-hover:text-primary">{q.number}</span>
                     <span className="mr-2 text-xs text-fg-muted">{q.sub} · {formatDate(q.at)}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2 border-t border-border-soft/60 pt-2 sm:justify-end sm:border-0 sm:pt-0">
                     <Badge tone={q.tone}>{q.statusLabel}</Badge>
                     <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
                   </div>

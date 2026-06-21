@@ -73,13 +73,13 @@ export async function RequesterHome({ userId }: { userId: string }) {
           <ul className="stagger-children space-y-2">
             {rows.map((r) => (
               <li key={r.key}>
-                <Link href={r.href} className="group flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
-                  <div className="flex items-center gap-2">
+                <Link href={r.href} className="group flex flex-col gap-2 rounded-xl border border-border-soft bg-surface-2/40 px-3 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:py-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="info">{r.typeLabel}</Badge>
                     <span className="font-medium text-fg transition-colors group-hover:text-primary">{r.number}</span>
                     <span className="text-xs text-fg-faint">آخر تحديث {formatDate(r.at)}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2 border-t border-border-soft/60 pt-2 sm:justify-end sm:border-0 sm:pt-0">
                     <Badge tone={r.tone}>{r.statusLabel}</Badge>
                     <ChevronLeft className="h-4 w-4 text-fg-faint transition-transform group-hover:-translate-x-0.5" />
                   </div>

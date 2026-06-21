@@ -35,14 +35,14 @@ export async function AdminHome() {
         ) : (
           <ul className="space-y-2">
             {recentTx.map((t) => (
-              <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border-soft bg-surface-2/40 px-3 py-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)]">
-                <div className="flex items-center gap-2">
+              <li key={t.id} className="flex flex-col gap-2 rounded-xl border border-border-soft bg-surface-2/40 px-3 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_4px_20px_-8px_var(--primary)] sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="info">{SERVICE_TYPE_META[t.type]?.label ?? t.type}</Badge>
                   <span className="text-sm font-medium text-fg">{t.referenceId}</span>
                   <span className="text-xs text-fg-muted">{t.requesterName} · {formatDate(t.createdAt)}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-fg">{formatIQD(Number(t.agreedAmount))}</span>
+                <div className="flex items-center justify-between gap-2 border-t border-border-soft/60 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+                  <span className="text-sm font-semibold text-fg">{formatIQD(Number(t.agreedAmount))}</span>
                   <Badge tone={TX_STATUS_META[t.status]?.tone ?? "muted"}>{TX_STATUS_META[t.status]?.label}</Badge>
                 </div>
               </li>
